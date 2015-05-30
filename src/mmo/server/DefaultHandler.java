@@ -31,6 +31,7 @@ public class DefaultHandler extends AbstractHandler {
 					HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
 			HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
 					"text/plain; encoding=utf-8");
+			HttpHeaders.setKeepAlive(res, true);
 			HttpHeaders.setContentLength(res, buf.readableBytes());
 			ctx.writeAndFlush(res).addListener(new ChannelFutureListener() {
 				@Override
