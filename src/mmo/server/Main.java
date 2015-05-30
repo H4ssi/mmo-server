@@ -50,6 +50,9 @@ public class Main {
 													HttpVersion.HTTP_1_1,
 													HttpResponseStatus.OK);
 
+											// this is needed for browsers to
+											// render content as soon as it is
+											// received
 											res.headers()
 													.set(HttpHeaders.Names.CONTENT_TYPE,
 															"text/html; charset=utf-8");
