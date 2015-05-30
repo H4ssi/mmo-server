@@ -4,9 +4,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.ReferenceCountUtil;
 
 public class Handler extends ChannelInboundHandlerAdapter {
 	public interface HandlerContext {
@@ -23,7 +26,6 @@ public class Handler extends ChannelInboundHandlerAdapter {
 	@Override
 	public void channelRead(final ChannelHandlerContext ctx, Object msg)
 			throws Exception {
-		System.out.println(msg);
 		if (msg instanceof HttpRequest) {
 			HttpRequest request = (HttpRequest) msg;
 
@@ -36,14 +38,24 @@ public class Handler extends ChannelInboundHandlerAdapter {
 				handler = new NotificationHandler(context);
 				break;
 			default:
-				ctx.writeAndFlush(new DefaultFullHttpResponse(
-						HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND));
-				return;
+				handler = null;
+				ctx.writeAndFlush(create404());
 			}
 		}
 
 		if (handler != null) {
 			handler.channelRead(ctx, msg);
+		} else {
+			ReferenceCountUtil.release(msg);
 		}
+	}
+
+	private FullHttpResponse create404() {
+		FullHttpResponse response = new DefaultFullHttpResponse(
+				HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
+		HttpHeaders.setKeepAlive(response, true);
+		HttpHeaders.setContentLength(response, 0);
+
+		return response;
 	}
 }
