@@ -11,10 +11,8 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
-
-import java.nio.charset.Charset;
-
 import mmo.server.Handler.HandlerContext;
 
 public class DefaultHandler extends AbstractHandler {
@@ -28,7 +26,7 @@ public class DefaultHandler extends AbstractHandler {
 		try {
 			if (msg instanceof HttpRequest) {
 				ByteBuf buf = Unpooled.wrappedBuffer("hello world!"
-						.getBytes(Charset.forName("UTF-8")));
+						.getBytes(CharsetUtil.UTF_8));
 				HttpResponse res = new DefaultFullHttpResponse(
 						HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
 				HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
