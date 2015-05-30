@@ -11,6 +11,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.ReferenceCountUtil;
 
 import java.nio.charset.Charset;
 
@@ -24,22 +25,26 @@ public class DefaultHandler extends AbstractHandler {
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg)
 			throws Exception {
-		if (msg instanceof HttpRequest) {
-			ByteBuf buf = Unpooled.wrappedBuffer("hello world!"
-					.getBytes(Charset.forName("UTF-8")));
-			HttpResponse res = new DefaultFullHttpResponse(
-					HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
-			HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
-					"text/plain; encoding=utf-8");
-			HttpHeaders.setKeepAlive(res, true);
-			HttpHeaders.setContentLength(res, buf.readableBytes());
-			ctx.writeAndFlush(res).addListener(new ChannelFutureListener() {
-				@Override
-				public void operationComplete(ChannelFuture future)
-						throws Exception {
-					getHandlerContext().unregister();
-				}
-			});
+		try {
+			if (msg instanceof HttpRequest) {
+				ByteBuf buf = Unpooled.wrappedBuffer("hello world!"
+						.getBytes(Charset.forName("UTF-8")));
+				HttpResponse res = new DefaultFullHttpResponse(
+						HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
+				HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
+						"text/plain; encoding=utf-8");
+				HttpHeaders.setKeepAlive(res, true);
+				HttpHeaders.setContentLength(res, buf.readableBytes());
+				ctx.writeAndFlush(res).addListener(new ChannelFutureListener() {
+					@Override
+					public void operationComplete(ChannelFuture future)
+							throws Exception {
+						getHandlerContext().unregister();
+					}
+				});
+			}
+		} finally {
+			ReferenceCountUtil.release(msg);
 		}
 	}
 }
