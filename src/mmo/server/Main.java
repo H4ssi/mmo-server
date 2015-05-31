@@ -23,6 +23,7 @@ public class Main {
 					};
 				}).option(ChannelOption.TCP_NODELAY, true)
 				.childOption(ChannelOption.TCP_NODELAY, true).bind(8080);
+		Clock.getInstance();
 	}
 
 }

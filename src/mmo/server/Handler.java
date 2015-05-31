@@ -32,21 +32,33 @@ public class Handler extends ChannelInboundHandlerAdapter {
 			switch (request.getUri()) {
 			case "":
 			case "/":
-				handler = new DefaultHandler(context);
+				installHandler(ctx, new DefaultHandler(context));
 				break;
 			case "/game":
-				handler = new NotificationHandler(context);
+				installHandler(ctx, new NotificationHandler(context));
 				break;
 			default:
-				handler = null;
-				ctx.writeAndFlush(create404());
+				installHandler(ctx, null);
 			}
 		}
 
 		if (handler != null) {
-			handler.channelRead(ctx, msg);
+			super.channelRead(ctx, msg);
 		} else {
+			ctx.writeAndFlush(create404());
 			ReferenceCountUtil.release(msg);
+		}
+	}
+
+	private void installHandler(ChannelHandlerContext ctx,
+			ChannelInboundHandler newHandler) {
+		if (handler != null) {
+			ctx.pipeline().removeLast();
+			handler = null;
+		}
+		if (newHandler != null) {
+			ctx.pipeline().addLast(newHandler);
+			handler = newHandler;
 		}
 	}
 

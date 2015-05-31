@@ -1,12 +1,10 @@
 package mmo.server;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
@@ -14,15 +12,13 @@ import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
-import io.netty.util.HashedWheelTimer;
-import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
-
-import java.util.concurrent.TimeUnit;
-
+import io.netty.util.CharsetUtil;
+import mmo.server.Clock.Callback;
 import mmo.server.Handler.HandlerContext;
 
 public class NotificationHandler extends AbstractHandler {
+
+	private Callback cb;
 
 	public NotificationHandler(HandlerContext handlerContext) {
 		super(handlerContext);
@@ -43,73 +39,43 @@ public class NotificationHandler extends AbstractHandler {
 
 			ctx.writeAndFlush(res);
 
-			final ByteBuf b = ctx.alloc().buffer();
-			b.writeBytes("hello\n".getBytes());
-
-			final ByteBuf i = ctx.alloc().buffer();
-			i.writeBytes("<!DOCTYPE html><html><body><pre>\n".getBytes());
+			final ByteBuf i = Unpooled
+					.wrappedBuffer("<!DOCTYPE html><html><body><pre>\n"
+							.getBytes(CharsetUtil.UTF_8));
 			ctx.writeAndFlush(new DefaultHttpContent(i));
 
-			HashedWheelTimer t = new HashedWheelTimer();
-
-			t.newTimeout(new TimerTask() {
+			cb = new Callback() {
 
 				@Override
-				public void run(Timeout timeout) throws Exception {
-					b.resetReaderIndex();
-					b.retain();
-					ctx.writeAndFlush(new DefaultHttpContent(b));
-					System.out.println(1);
+				public void tock() {
+					ctx.writeAndFlush(new DefaultHttpContent(
+							Unpooled.wrappedBuffer("tock\n"
+									.getBytes(CharsetUtil.UTF_8))));
 				}
-			}, 1, TimeUnit.SECONDS);
-			t.newTimeout(new TimerTask() {
 
 				@Override
-				public void run(Timeout timeout) throws Exception {
-					b.resetReaderIndex();
-					b.retain();
-					ctx.writeAndFlush(new DefaultHttpContent(b));
-					System.out.println(2);
+				public void tick() {
+					ctx.writeAndFlush(new DefaultHttpContent(
+							Unpooled.wrappedBuffer("tick\n"
+									.getBytes(CharsetUtil.UTF_8))));
 				}
-			}, 2, TimeUnit.SECONDS);
-			t.newTimeout(new TimerTask() {
-
-				@Override
-				public void run(Timeout timeout) throws Exception {
-					b.resetReaderIndex();
-					b.retain();
-					ctx.writeAndFlush(new DefaultHttpContent(b));
-					System.out.println(3);
-				}
-			}, 3, TimeUnit.SECONDS);
-			t.newTimeout(new TimerTask() {
-
-				@Override
-				public void run(Timeout timeout) throws Exception {
-					b.resetReaderIndex();
-					b.retain();
-					ctx.writeAndFlush(new DefaultLastHttpContent())
-							.addListener(new ChannelFutureListener() {
-
-								@Override
-								public void operationComplete(
-										ChannelFuture future) throws Exception {
-									ctx.close();
-									b.release();
-									getHandlerContext().unregister();
-									System.out.println("closed");
-								}
-							});
-					System.out.println(4);
-				}
-			}, 4, TimeUnit.SECONDS);
+			};
+			Clock.getInstance().addCallback(cb);
 		} else if (msg instanceof LastHttpContent) {
 			System.out.println("client end of data");
 		} else if (msg instanceof HttpContent) {
-			ByteBuf b = ctx.alloc().buffer();
-			b.resetWriterIndex();
-			b.writeBytes("pong".getBytes());
-			ctx.writeAndFlush(new DefaultHttpContent(b));
+			ctx.writeAndFlush(new DefaultHttpContent(Unpooled
+					.wrappedBuffer("pong".getBytes(CharsetUtil.UTF_8))));
 		}
+	}
+
+	@Override
+	public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+		System.out.println("channel closed");
+		if (cb != null) {
+			Clock.getInstance().removeCallback(cb);
+			cb = null;
+		}
+		super.channelInactive(ctx);
 	}
 }
