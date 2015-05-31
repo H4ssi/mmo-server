@@ -3,6 +3,7 @@ package mmo.server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpContent;
@@ -14,15 +15,10 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
 import mmo.server.Clock.Callback;
-import mmo.server.Handler.HandlerContext;
 
-public class NotificationHandler extends AbstractHandler {
+public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
 	private Callback cb;
-
-	public NotificationHandler(HandlerContext handlerContext) {
-		super(handlerContext);
-	}
 
 	public void channelRead(final ChannelHandlerContext ctx, Object msg)
 			throws Exception {

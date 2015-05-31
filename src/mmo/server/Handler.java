@@ -12,16 +12,7 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCountUtil;
 
 public class Handler extends ChannelInboundHandlerAdapter {
-	public interface HandlerContext {
-		public void unregister();
-	}
-
 	private ChannelInboundHandler handler = null;
-	private HandlerContext context = new HandlerContext() {
-		public void unregister() {
-			handler = null;
-		};
-	};
 
 	@Override
 	public void channelRead(final ChannelHandlerContext ctx, Object msg)
@@ -32,10 +23,10 @@ public class Handler extends ChannelInboundHandlerAdapter {
 			switch (request.getUri()) {
 			case "":
 			case "/":
-				installHandler(ctx, new DefaultHandler(context));
+				installHandler(ctx, new DefaultHandler());
 				break;
 			case "/game":
-				installHandler(ctx, new NotificationHandler(context));
+				installHandler(ctx, new NotificationHandler());
 				break;
 			default:
 				installHandler(ctx, null);
