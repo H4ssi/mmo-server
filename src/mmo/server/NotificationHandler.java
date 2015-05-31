@@ -1,23 +1,32 @@
 package mmo.server;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
-import mmo.server.Clock.Callback;
+import mmo.server.GameLoop.Callback;
+import mmo.server.model.Coord;
 
 import javax.inject.Inject;
+import java.util.Map;
 
 public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
     private Callback cb;
-    private final Clock clock;
+    private final GameLoop gameLoop;
 
     @Inject
-    public NotificationHandler(Clock clock) {
-        this.clock = clock;
+    public NotificationHandler(GameLoop gameLoop) {
+        this.gameLoop = gameLoop;
     }
 
     public void channelRead(final ChannelHandlerContext ctx, Object msg)
@@ -35,18 +44,32 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
             ctx.writeAndFlush(res);
 
-            final ByteBuf i = Unpooled
-                    .wrappedBuffer("<!DOCTYPE html><html><body><pre>\n"
-                            .getBytes(CharsetUtil.UTF_8));
-            ctx.writeAndFlush(new DefaultHttpContent(i));
+            send(ctx, "<!DOCTYPE html><html><body><pre>\n");
 
             cb = new Callback() {
-
                 @Override
                 public void tock() {
-                    ctx.writeAndFlush(new DefaultHttpContent(
-                            Unpooled.wrappedBuffer("tock\n"
-                                    .getBytes(CharsetUtil.UTF_8))));
+                    send(ctx, "tock\n");
+                }
+
+                @Override
+                public void cannotEnter() {
+                    send(ctx, "cannot enter\n");
+                }
+
+                @Override
+                public void endered(Coord coord) {
+                    send(ctx, "endered: " + coord + "\n");
+                }
+
+                @Override
+                public void left(Coord coord) {
+                    send(ctx, "left: " + coord + "\n");
+                }
+
+                @Override
+                public void inRoom(Map<Coord, Callback> inRoom) {
+                    send(ctx, "inRoom: " + inRoom.keySet() + "\n");
                 }
 
                 @Override
@@ -56,20 +79,24 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                                     .getBytes(CharsetUtil.UTF_8))));
                 }
             };
-            clock.addCallback(cb);
+            gameLoop.login(cb);
         } else if (msg instanceof LastHttpContent) {
             System.out.println("client end of data");
         } else if (msg instanceof HttpContent) {
-            ctx.writeAndFlush(new DefaultHttpContent(Unpooled
-                    .wrappedBuffer("pong".getBytes(CharsetUtil.UTF_8))));
+            send(ctx, "pong");
         }
+    }
+
+    private void send(ChannelHandlerContext ctx, String msg) {
+        ctx.writeAndFlush(new DefaultHttpContent(Unpooled
+                .wrappedBuffer(msg.getBytes(CharsetUtil.UTF_8))));
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         System.out.println("channel closed");
         if (cb != null) {
-            clock.removeCallback(cb);
+            gameLoop.logout(cb);
             cb = null;
         }
         super.channelInactive(ctx);
