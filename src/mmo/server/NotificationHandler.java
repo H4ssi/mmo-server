@@ -17,12 +17,16 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
 import mmo.server.GameLoop.Callback;
+import mmo.server.message.CannotEnter;
 import mmo.server.message.Entered;
+import mmo.server.message.InRoom;
+import mmo.server.message.Left;
 import mmo.server.message.Message;
 import mmo.server.model.Coord;
 
 import javax.inject.Inject;
 import java.util.Map;
+import java.util.Set;
 
 public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
@@ -61,28 +65,24 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
                 @Override
                 public void cannotEnter() {
-                    send(ctx, "cannot enter\n");
+                    sendMessage(ctx, new CannotEnter());
                 }
 
                 @Override
                 public void endered(Coord coord) {
-                    try {
-                        send(ctx, writer.writeValueAsString(
-                                new Entered(coord.getX(), coord.getY())));
-                    } catch (JsonProcessingException e) {
-                        // TODO unhandled exception
-                        e.printStackTrace();
-                    }
+                    sendMessage(ctx, new Entered(coord.getX(), coord.getY()));
                 }
 
                 @Override
                 public void left(Coord coord) {
-                    send(ctx, "left: " + coord + "\n");
+                    sendMessage(ctx, new Left());
                 }
 
                 @Override
                 public void inRoom(Map<Coord, Callback> inRoom) {
-                    send(ctx, "inRoom: " + inRoom.keySet() + "\n");
+                    Set<Coord> coords = inRoom.keySet();
+                    sendMessage(ctx, new InRoom(
+                            coords.toArray(new Coord[coords.size()])));
                 }
 
                 @Override
@@ -95,6 +95,18 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
             System.out.println("client end of data");
         } else if (msg instanceof HttpContent) {
             send(ctx, "pong");
+        }
+    }
+
+    private void sendMessage(ChannelHandlerContext ctx, Message msg) {
+        try {
+            ctx.writeAndFlush(
+                    new DefaultHttpContent(
+                            Unpooled.wrappedBuffer(
+                                    writer.writeValueAsBytes(msg))));
+        } catch (JsonProcessingException e) {
+            // TODO unhandled exception
+            e.printStackTrace();
         }
     }
 
