@@ -24,6 +24,8 @@ repositories {
 dependencies {
     compile "io.netty:netty-all:4.0.28.Final"
     compile "com.google.guava:guava:18.0"
+    compile "com.squareup.dagger:dagger:1.2.2"
+    compile "com.squareup.dagger:dagger-compiler:1.2.2"
 }
 
 task wrapper(type: Wrapper) {

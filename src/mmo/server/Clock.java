@@ -1,71 +1,69 @@
 package mmo.server;
 
+import com.google.common.collect.Sets;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.Sets;
-
+@Singleton
 public class Clock {
-	private static final Clock INSTANCE = new Clock();
+    public interface Callback {
+        void tick();
 
-	public static Clock getInstance() {
-		return INSTANCE;
-	}
+        void tock();
+    }
 
-	public interface Callback {
-		void tick();
+    private final HashedWheelTimer timer;
+    private boolean tickTock = false;
+    private TimerTask task = new TimerTask() {
 
-		void tock();
-	}
+        @Override
+        public void run(Timeout timeout) throws Exception {
+            tickTock ^= true;
+            if (tickTock) {
+                tick();
+            } else {
+                tock();
+            }
+            schedule();
+        }
+    };
+    private Set<Callback> callbacks = Sets.newConcurrentHashSet();
 
-	private HashedWheelTimer timer = new HashedWheelTimer();
-	private boolean tickTock = false;
-	private TimerTask task = new TimerTask() {
+    @Inject
+    public Clock(HashedWheelTimer timer) {
+        this.timer = timer;
+        schedule();
+    }
 
-		@Override
-		public void run(Timeout timeout) throws Exception {
-			tickTock ^= true;
-			if (tickTock) {
-				tick();
-			} else {
-				tock();
-			}
-			schedule();
-		}
-	};
-	private Set<Callback> callbacks = Sets.newConcurrentHashSet();
+    private void tock() {
+        System.out.println("tock");
+        for (Callback cb : callbacks) {
+            cb.tock();
+        }
+    }
 
-	public Clock() {
-		schedule();
-	}
+    private void tick() {
+        System.out.println("tick");
+        for (Callback cb : callbacks) {
+            cb.tick();
+        }
+    }
 
-	private void tock() {
-		System.out.println("tock");
-		for (Callback cb : callbacks) {
-			cb.tock();
-		}
-	}
+    private void schedule() {
+        timer.newTimeout(task, 1, TimeUnit.SECONDS);
+    }
 
-	private void tick() {
-		System.out.println("tick");
-		for (Callback cb : callbacks) {
-			cb.tick();
-		}
-	}
+    public void addCallback(Callback cb) {
+        callbacks.add(cb);
+    }
 
-	private void schedule() {
-		timer.newTimeout(task, 1, TimeUnit.SECONDS);
-	}
-
-	public void addCallback(Callback cb) {
-		callbacks.add(cb);
-	}
-
-	public void removeCallback(Callback cb) {
-		callbacks.remove(cb);
-	}
+    public void removeCallback(Callback cb) {
+        callbacks.remove(cb);
+    }
 }

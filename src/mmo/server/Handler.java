@@ -3,62 +3,70 @@ package mmo.server;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import io.netty.util.ReferenceCountUtil;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+
 public class Handler extends ChannelInboundHandlerAdapter {
-	private ChannelInboundHandler handler = null;
+    private ChannelInboundHandler handler = null;
 
-	@Override
-	public void channelRead(final ChannelHandlerContext ctx, Object msg)
-			throws Exception {
-		if (msg instanceof HttpRequest) {
-			HttpRequest request = (HttpRequest) msg;
+    private final Provider<DefaultHandler> defaultHandlerProvider;
+    private final Provider<NotificationHandler> notificationHandlerProvider;
 
-			switch (request.getUri()) {
-			case "":
-			case "/":
-				installHandler(ctx, new DefaultHandler());
-				break;
-			case "/game":
-				installHandler(ctx, new NotificationHandler());
-				break;
-			default:
-				installHandler(ctx, null);
-			}
-		}
+    @Inject
+    public Handler(Provider<DefaultHandler> defaultHandlerProvider,
+                   Provider<NotificationHandler> notificationHandlerProvider) {
+        this.defaultHandlerProvider = defaultHandlerProvider;
+        this.notificationHandlerProvider = notificationHandlerProvider;
+    }
 
-		if (handler != null) {
-			super.channelRead(ctx, msg);
-		} else {
-			ctx.writeAndFlush(create404());
-			ReferenceCountUtil.release(msg);
-		}
-	}
+    @Override
+    public void channelRead(final ChannelHandlerContext ctx, Object msg)
+            throws Exception {
+        if (msg instanceof HttpRequest) {
+            HttpRequest request = (HttpRequest) msg;
 
-	private void installHandler(ChannelHandlerContext ctx,
-			ChannelInboundHandler newHandler) {
-		if (handler != null) {
-			ctx.pipeline().removeLast();
-			handler = null;
-		}
-		if (newHandler != null) {
-			ctx.pipeline().addLast(newHandler);
-			handler = newHandler;
-		}
-	}
+            switch (request.getUri()) {
+                case "":
+                case "/":
+                    installHandler(ctx, defaultHandlerProvider.get());
+                    break;
+                case "/game":
+                    installHandler(ctx, notificationHandlerProvider.get());
+                    break;
+                default:
+                    installHandler(ctx, null);
+            }
+        }
 
-	private FullHttpResponse create404() {
-		FullHttpResponse response = new DefaultFullHttpResponse(
-				HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
-		HttpHeaders.setKeepAlive(response, true);
-		HttpHeaders.setContentLength(response, 0);
+        if (handler != null) {
+            super.channelRead(ctx, msg);
+        } else {
+            ctx.writeAndFlush(create404());
+            ReferenceCountUtil.release(msg);
+        }
+    }
 
-		return response;
-	}
+    private void installHandler(ChannelHandlerContext ctx,
+                                ChannelInboundHandler newHandler) {
+        if (handler != null) {
+            ctx.pipeline().removeLast();
+            handler = null;
+        }
+        if (newHandler != null) {
+            ctx.pipeline().addLast(newHandler);
+            handler = newHandler;
+        }
+    }
+
+    private FullHttpResponse create404() {
+        FullHttpResponse response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
+        HttpHeaders.setKeepAlive(response, true);
+        HttpHeaders.setContentLength(response, 0);
+
+        return response;
+    }
 }
