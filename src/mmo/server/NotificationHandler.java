@@ -1,5 +1,8 @@
 package mmo.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -14,6 +17,8 @@ import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.util.CharsetUtil;
 import mmo.server.GameLoop.Callback;
+import mmo.server.message.Entered;
+import mmo.server.message.Message;
 import mmo.server.model.Coord;
 
 import javax.inject.Inject;
@@ -23,10 +28,12 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
     private Callback cb;
     private final GameLoop gameLoop;
+    private final ObjectWriter writer;
 
     @Inject
-    public NotificationHandler(GameLoop gameLoop) {
+    public NotificationHandler(GameLoop gameLoop, ObjectMapper mapper) {
         this.gameLoop = gameLoop;
+        writer = mapper.writerFor(Message.class);
     }
 
     public void channelRead(final ChannelHandlerContext ctx, Object msg)
@@ -59,7 +66,13 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
                 @Override
                 public void endered(Coord coord) {
-                    send(ctx, "endered: " + coord + "\n");
+                    try {
+                        send(ctx, writer.writeValueAsString(
+                                new Entered(coord.getX(), coord.getY())));
+                    } catch (JsonProcessingException e) {
+                        // TODO unhandled exception
+                        e.printStackTrace();
+                    }
                 }
 
                 @Override
