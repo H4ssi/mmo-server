@@ -56,7 +56,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
             cb = new Callback() {
                 @Override
                 public void tock() {
-                    send(ctx, "tock\n");
+
                 }
 
                 @Override
@@ -87,9 +87,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
                 @Override
                 public void tick() {
-                    ctx.writeAndFlush(new DefaultHttpContent(
-                            Unpooled.wrappedBuffer("tick\n"
-                                    .getBytes(CharsetUtil.UTF_8))));
+
                 }
             };
             gameLoop.login(cb);
