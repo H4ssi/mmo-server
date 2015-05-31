@@ -3,7 +3,12 @@ package mmo.server;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCountUtil;
 
 import javax.inject.Inject;
@@ -14,12 +19,15 @@ public class Handler extends ChannelInboundHandlerAdapter {
 
     private final Provider<DefaultHandler> defaultHandlerProvider;
     private final Provider<NotificationHandler> notificationHandlerProvider;
+    private final Provider<StatusHandler> statusHandlerProvider;
 
     @Inject
     public Handler(Provider<DefaultHandler> defaultHandlerProvider,
-                   Provider<NotificationHandler> notificationHandlerProvider) {
+                   Provider<NotificationHandler> notificationHandlerProvider,
+                   Provider<StatusHandler> statusHandlerProvider) {
         this.defaultHandlerProvider = defaultHandlerProvider;
         this.notificationHandlerProvider = notificationHandlerProvider;
+        this.statusHandlerProvider = statusHandlerProvider;
     }
 
     @Override
@@ -32,6 +40,9 @@ public class Handler extends ChannelInboundHandlerAdapter {
                 case "":
                 case "/":
                     installHandler(ctx, defaultHandlerProvider.get());
+                    break;
+                case "/status":
+                    installHandler(ctx, statusHandlerProvider.get());
                     break;
                 case "/game":
                     installHandler(ctx, notificationHandlerProvider.get());
