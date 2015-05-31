@@ -75,27 +75,37 @@ public class GameLoop {
         timer.newTimeout(task, 1, TimeUnit.SECONDS);
     }
 
-    public void login(Callback cb) {
-        callbacks.add(cb);
+    public void login(final Callback cb) {
+        loop.submit(new Runnable() {
+            @Override
+            public void run() {
+                callbacks.add(cb);
 
-        Coord coord = room.enter(new Coord(8, 8), cb);
-        if (coord == null) {
-            cb.cannotEnter();
-        } else {
-            for (Callback c : room.contents().values()) {
-                c.endered(coord);
+                Coord coord = room.enter(new Coord(8, 8), cb);
+                if (coord == null) {
+                    cb.cannotEnter();
+                } else {
+                    for (Callback c : room.contents().values()) {
+                        c.endered(coord);
+                    }
+                    cb.inRoom(room.contents());
+                }
             }
-            cb.inRoom(room.contents());
-        }
+        });
     }
 
-    public void logout(Callback cb) {
-        Coord coord = room.leave(cb);
-        for (Callback c : room.contents().values()) {
-            c.left(coord);
-        }
+    public void logout(final Callback cb) {
+        loop.submit(new Runnable() {
+            @Override
+            public void run() {
+                Coord coord = room.leave(cb);
+                for (Callback c : room.contents().values()) {
+                    c.left(coord);
+                }
 
-        callbacks.remove(cb);
+                callbacks.remove(cb);
+            }
+        });
     }
 
     public Future<?> shutdownGracefully() {
