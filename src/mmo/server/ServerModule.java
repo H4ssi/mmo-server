@@ -32,6 +32,7 @@ public class ServerModule {
                                 .inclusion(JsonTypeInfo.As.PROPERTY)
                                 .typeProperty("type")
                 )
-                .enable(SerializationFeature.INDENT_OUTPUT);
+                .enable(SerializationFeature.INDENT_OUTPUT)
+                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 }
