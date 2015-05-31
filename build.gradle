@@ -28,6 +28,10 @@ dependencies {
     compile "com.squareup.dagger:dagger-compiler:1.2.2"
 }
 
+run {
+    standardInput = System.in
+}
+
 task wrapper(type: Wrapper) {
     gradleVersion = '2.4'
 }
