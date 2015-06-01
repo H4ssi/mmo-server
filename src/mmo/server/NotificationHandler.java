@@ -9,8 +9,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.*;
-import io.netty.util.CharsetUtil;
-import io.netty.util.ReferenceCountUtil;
+import io.netty.util.*;
 import mmo.server.GameLoop.Callback;
 import mmo.server.message.*;
 import mmo.server.model.Coord;
@@ -18,6 +17,7 @@ import mmo.server.model.Coord;
 import javax.inject.Inject;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
@@ -26,9 +26,12 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
     private final ObjectWriter writer;
     private final ObjectReader reader;
 
+    private final HashedWheelTimer timer;
+
     @Inject
-    public NotificationHandler(GameLoop gameLoop, ObjectMapper mapper) {
+    public NotificationHandler(GameLoop gameLoop, ObjectMapper mapper, HashedWheelTimer timer) {
         this.gameLoop = gameLoop;
+        this.timer = timer;
         writer = mapper.writerFor(Message.class);
         reader = mapper.reader(Message.class);
     }
@@ -47,9 +50,10 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                 HttpHeaders.setKeepAlive(res, false);
                 HttpHeaders.setTransferEncodingChunked(res);
 
-                ctx.writeAndFlush(res);
-
+                ctx.write(res);
                 send(ctx, "<!DOCTYPE html><html><body><pre>\n");
+
+                welcomeMessages(ctx);
 
                 cb = new Callback() {
                     @Override
@@ -105,6 +109,50 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
             }
         } finally {
             ReferenceCountUtil.release(msg);
+        }
+    }
+
+    private void welcomeMessages(final ChannelHandlerContext ctx) {
+        String[] msgs = new String[]{
+                "<big>Welcome to POS1-mmo!</big>",
+                "<big><strong>Please use responsibly!</strong></big>",
+                "<big><strong>" +
+                        "(e.g. do not use it for cheating at tests!!!)" +
+                        "</strong></big>",
+
+                "Find code and updates here: " +
+                        "<ul>" +
+                        "<li>" +
+                        "<a href='https://github.com/H4ssi/mmo-server'>" +
+                        "https://github.com/H4ssi/mmo-server" +
+                        "</a>" +
+                        "</li>" +
+                        "<li>" +
+                        "<a href='https://github.com/H4ssi/mmo-client'>" +
+                        "https://github.com/H4ssi/mmo-client" +
+                        "</a>" +
+                        "</li>" +
+                        "</ul>",
+
+                "<small>This server should receive non-breaking " +
+                        "updates only!<br>" +
+                        "For the latest and greatest use " +
+                        "<a href='http://89.110.148.15:8080'>" +
+                        "http://89.110.148.15:8080 (port 8080)" +
+                        "</a>" +
+                        "</small>",
+
+                "<big><strong>hf</strong></big>"};
+
+        int delay = 2;
+        for (final String msg : msgs) {
+            timer.newTimeout(new TimerTask() {
+                @Override
+                public void run(Timeout timeout) throws Exception {
+                    sendMessage(ctx, new Chat(msg));
+                }
+            }, delay, TimeUnit.SECONDS);
+            delay += 1;
         }
     }
 
