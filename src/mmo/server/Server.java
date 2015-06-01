@@ -28,7 +28,7 @@ public class Server {
         this.gameLoop = gameLoop;
     }
 
-    public void run() {
+    public void run(String host, int port) {
         parentGroup = new NioEventLoopGroup();
         childGroup = new NioEventLoopGroup();
         new ServerBootstrap()
@@ -44,7 +44,7 @@ public class Server {
                 })
                 .option(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.TCP_NODELAY, true)
-                .bind(8080);
+                .bind(host, port);
     }
 
     public void shutdown() throws InterruptedException {
