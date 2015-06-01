@@ -8,23 +8,11 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
+import io.netty.util.ReferenceCountUtil;
 import mmo.server.GameLoop.Callback;
-import mmo.server.message.CannotEnter;
-import mmo.server.message.Chat;
-import mmo.server.message.Entered;
-import mmo.server.message.InRoom;
-import mmo.server.message.Left;
-import mmo.server.message.Message;
+import mmo.server.message.*;
 import mmo.server.model.Coord;
 
 import javax.inject.Inject;
@@ -47,71 +35,76 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
     public void channelRead(final ChannelHandlerContext ctx, Object msg)
             throws Exception {
-        if (msg instanceof HttpRequest) {
-            HttpResponse res = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
-                    HttpResponseStatus.OK);
+        try {
+            if (msg instanceof HttpRequest) {
+                HttpResponse res = new DefaultHttpResponse(HttpVersion.HTTP_1_1,
+                        HttpResponseStatus.OK);
 
-            // this is needed for browsers to render content as soon as it is
-            // received
-            HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
-                    "text/html; charset=utf-8");
-            HttpHeaders.setKeepAlive(res, false);
-            HttpHeaders.setTransferEncodingChunked(res);
+                // this is needed for browsers to render content as soon as it
+                // is received
+                HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
+                        "text/html; charset=utf-8");
+                HttpHeaders.setKeepAlive(res, false);
+                HttpHeaders.setTransferEncodingChunked(res);
 
-            ctx.writeAndFlush(res);
+                ctx.writeAndFlush(res);
 
-            send(ctx, "<!DOCTYPE html><html><body><pre>\n");
+                send(ctx, "<!DOCTYPE html><html><body><pre>\n");
 
-            cb = new Callback() {
-                @Override
-                public void tock() {
+                cb = new Callback() {
+                    @Override
+                    public void tock() {
 
+                    }
+
+                    @Override
+                    public void cannotEnter() {
+                        sendMessage(ctx, new CannotEnter());
+                    }
+
+                    @Override
+                    public void endered(Coord coord) {
+                        sendMessage(ctx,
+                                new Entered(coord.getX(), coord.getY()));
+                    }
+
+                    @Override
+                    public void left(Coord coord) {
+                        sendMessage(ctx, new Left());
+                    }
+
+                    @Override
+                    public void inRoom(Map<Coord, Callback> inRoom) {
+                        Set<Coord> coords = inRoom.keySet();
+                        sendMessage(ctx, new InRoom(
+                                coords.toArray(new Coord[coords.size()])));
+                    }
+
+                    @Override
+                    public void chat(String message) {
+                        sendMessage(ctx, new Chat(message));
+                    }
+
+                    @Override
+                    public void tick() {
+
+                    }
+                };
+                gameLoop.login(cb);
+            } else if (msg instanceof LastHttpContent) {
+                System.out.println("client end of data");
+            } else if (msg instanceof HttpContent) {
+                HttpContent content = (HttpContent) msg;
+
+                Message m = reader.readValue(
+                        new ByteBufInputStream(content.content()));
+
+                if (m instanceof Chat) {
+                    gameLoop.chat(((Chat) m).getMessage());
                 }
-
-                @Override
-                public void cannotEnter() {
-                    sendMessage(ctx, new CannotEnter());
-                }
-
-                @Override
-                public void endered(Coord coord) {
-                    sendMessage(ctx, new Entered(coord.getX(), coord.getY()));
-                }
-
-                @Override
-                public void left(Coord coord) {
-                    sendMessage(ctx, new Left());
-                }
-
-                @Override
-                public void inRoom(Map<Coord, Callback> inRoom) {
-                    Set<Coord> coords = inRoom.keySet();
-                    sendMessage(ctx, new InRoom(
-                            coords.toArray(new Coord[coords.size()])));
-                }
-
-                @Override
-                public void chat(String message) {
-                    sendMessage(ctx, new Chat(message));
-                }
-
-                @Override
-                public void tick() {
-
-                }
-            };
-            gameLoop.login(cb);
-        } else if (msg instanceof LastHttpContent) {
-            System.out.println("client end of data");
-        } else if (msg instanceof HttpContent) {
-            HttpContent content = (HttpContent) msg;
-
-            Message m = reader.readValue(
-                    new ByteBufInputStream(content.content()));
-
-            if (m instanceof Chat) {
-                gameLoop.chat(((Chat) m).getMessage());
             }
+        } finally {
+            ReferenceCountUtil.release(msg);
         }
     }
 
