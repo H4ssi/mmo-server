@@ -31,6 +31,8 @@ public class GameLoop {
         void left(Coord coord);
 
         void inRoom(Map<Coord, Callback> inRoom);
+
+        void chat(String message);
     }
 
     private final HashedWheelTimer timer;
@@ -104,6 +106,17 @@ public class GameLoop {
                 }
 
                 callbacks.remove(cb);
+            }
+        });
+    }
+
+    public void chat(final String message) {
+        loop.submit(new Runnable() {
+            @Override
+            public void run() {
+                for (Callback c : room.contents().values()) {
+                    c.chat(message);
+                }
             }
         });
     }
