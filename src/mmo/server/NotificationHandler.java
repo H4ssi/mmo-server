@@ -157,11 +157,11 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                         "https://gnu.org/licenses/agpl.html" +
                         "</a></small>",
 
-                "<small>This server should receive non-breaking " +
-                        "updates only!<br>" +
-                        "For the latest and greatest use " +
-                        "<a href='http://89.110.148.15:8080'>" +
-                        "http://89.110.148.15:8080 (port 8080)" +
+                "<small>This server will receive the newest features " +
+                        "and will be updated regularly!<br>" +
+                        "For the a more stable version use " +
+                        "<a href='http://89.110.148.15:33333'>" +
+                        "http://89.110.148.15:33333 (port 33333)" +
                         "</a>" +
                         "</small>",
 
