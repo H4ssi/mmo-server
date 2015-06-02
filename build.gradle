@@ -18,8 +18,19 @@ sourceSets {
         java {
             srcDirs = ["src"]
         }
+        resources {
+            srcDirs "${buildDir}/markdown"
+        }
     }
 }
+
+task copyMarkDown(type: Copy) {
+    from '.'
+    into "${buildDir}/markdown/mmo/server"
+    include "*.md"
+}
+
+tasks.processResources.dependsOn(copyMarkDown)
 
 repositories {
     mavenCentral()

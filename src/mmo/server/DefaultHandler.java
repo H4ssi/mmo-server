@@ -20,20 +20,37 @@
 
 package mmo.server;
 
+import com.google.common.io.ByteStreams;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
 
 import javax.inject.Inject;
+import java.io.IOException;
 
 public class DefaultHandler extends ChannelInboundHandlerAdapter {
+    private final byte[] data;
 
     @Inject
     public DefaultHandler() {
+        byte data[];
+        try {
+            data = ByteStreams.toByteArray(
+                    DefaultHandler.class.getResourceAsStream(
+                            "README.md"));
+        } catch (IOException e) {
+            data = "README.md not found :-(".getBytes(CharsetUtil.UTF_8);
+        }
+        this.data = data;
     }
 
     @Override
@@ -41,8 +58,7 @@ public class DefaultHandler extends ChannelInboundHandlerAdapter {
             throws Exception {
         try {
             if (msg instanceof HttpRequest) {
-                ByteBuf buf = Unpooled.wrappedBuffer("hello world!"
-                        .getBytes(CharsetUtil.UTF_8));
+                ByteBuf buf = Unpooled.wrappedBuffer(data);
                 HttpResponse res = new DefaultFullHttpResponse(
                         HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
                 HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
