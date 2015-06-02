@@ -20,20 +20,20 @@
 
 package mmo.server.message;
 
-import mmo.server.model.Coord;
+import mmo.server.model.PlayerInRoom;
 
 public class InRoom implements Message {
-    private Coord[] coords;
+    private PlayerInRoom[] players;
 
-    public InRoom(Coord[] coords) {
-        this.coords = coords;
+    public InRoom(PlayerInRoom[] players) {
+        this.players = players;
     }
 
-    public Coord[] getCoords() {
-        return coords;
+    public PlayerInRoom[] getCoords() {
+        return players;
     }
 
-    public void setCoords(Coord[] coords) {
-        this.coords = coords;
+    public void setCoords(PlayerInRoom[] coords) {
+        this.players = coords;
     }
 }

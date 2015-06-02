@@ -18,16 +18,19 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-package mmo.server.message;
+package mmo.server.model;
 
-import mmo.server.model.Coord;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
-public class Entered extends Coord implements Message {
+public class PlayerInRoom {
     private int id;
 
-    public Entered(int id, int x, int y) {
-        super(x, y);
+    @JsonUnwrapped
+    private Coord coord;
+
+    public PlayerInRoom(int id, Coord coord) {
         this.id = id;
+        this.coord = coord;
     }
 
     public int getId() {
@@ -36,5 +39,13 @@ public class Entered extends Coord implements Message {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public Coord getCoord() {
+        return coord;
+    }
+
+    public void setCoord(Coord coord) {
+        this.coord = coord;
     }
 }

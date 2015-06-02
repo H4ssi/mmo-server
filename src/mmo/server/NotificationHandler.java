@@ -33,10 +33,10 @@ import io.netty.util.*;
 import mmo.server.GameLoop.Callback;
 import mmo.server.message.*;
 import mmo.server.model.Coord;
+import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class NotificationHandler extends ChannelInboundHandlerAdapter {
@@ -87,21 +87,21 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                     }
 
                     @Override
-                    public void endered(Coord coord) {
+                    public void entered(int id, Coord coord) {
                         sendMessage(ctx,
-                                new Entered(coord.getX(), coord.getY()));
+                                new Entered(id, coord.getX(), coord.getY()));
                     }
 
                     @Override
-                    public void left(Coord coord) {
+                    public void left(int id) {
                         sendMessage(ctx, new Left());
                     }
 
                     @Override
-                    public void inRoom(Map<Coord, Callback> inRoom) {
-                        Set<Coord> coords = inRoom.keySet();
-                        sendMessage(ctx, new InRoom(
-                                coords.toArray(new Coord[coords.size()])));
+                    public void inRoom(List<PlayerInRoom> inRoom) {
+                        sendMessage(ctx, new InRoom(inRoom.toArray(
+                                new PlayerInRoom[inRoom.size()]
+                        )));
                     }
 
                     @Override

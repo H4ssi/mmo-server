@@ -27,10 +27,12 @@ import io.netty.util.TimerTask;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.Future;
 import mmo.server.model.Coord;
+import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -46,11 +48,11 @@ public class GameLoop {
 
         void cannotEnter();
 
-        void endered(Coord coord);
+        void entered(int id, Coord coord);
 
-        void left(Coord coord);
+        void left(int id);
 
-        void inRoom(Map<Coord, Callback> inRoom);
+        void inRoom(List<PlayerInRoom> inRoom);
 
         void chat(String message);
     }
@@ -107,10 +109,18 @@ public class GameLoop {
                 if (coord == null) {
                     cb.cannotEnter();
                 } else {
-                    for (Callback c : room.contents().values()) {
-                        c.endered(coord);
+                    List<PlayerInRoom> data = new LinkedList<PlayerInRoom>();
+                    for (Callback c : room.contents()) {
+                        c.entered(room.getId(cb), coord);
+                        if (c != cb) {
+                            data.add(new PlayerInRoom(
+                                    room.getId(c),
+                                    room.getCoord(c)
+                            ));
+                        }
                     }
-                    cb.inRoom(room.contents());
+
+                    cb.inRoom(data);
                 }
             }
         });
@@ -120,9 +130,9 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                Coord coord = room.leave(cb);
-                for (Callback c : room.contents().values()) {
-                    c.left(coord);
+                int id = room.leave(cb);
+                for (Callback c : room.contents()) {
+                    c.left(id);
                 }
 
                 callbacks.remove(cb);
@@ -134,7 +144,7 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                for (Callback c : room.contents().values()) {
+                for (Callback c : room.contents()) {
                     c.chat(message);
                 }
             }
