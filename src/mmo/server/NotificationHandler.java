@@ -28,10 +28,27 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.*;
-import io.netty.util.*;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.CharsetUtil;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 import mmo.server.GameLoop.Callback;
-import mmo.server.message.*;
+import mmo.server.message.CannotEnter;
+import mmo.server.message.Chat;
+import mmo.server.message.Entered;
+import mmo.server.message.InRoom;
+import mmo.server.message.Left;
+import mmo.server.message.Message;
 import mmo.server.model.Coord;
 
 import javax.inject.Inject;
@@ -48,10 +65,15 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
     private final HashedWheelTimer timer;
 
+    private final HtmlCleaner htmlCleaner;
+
     @Inject
-    public NotificationHandler(GameLoop gameLoop, ObjectMapper mapper, HashedWheelTimer timer) {
+    public NotificationHandler(GameLoop gameLoop, ObjectMapper mapper,
+                               HashedWheelTimer timer,
+                               HtmlCleaner htmlCleaner) {
         this.gameLoop = gameLoop;
         this.timer = timer;
+        this.htmlCleaner = htmlCleaner;
         writer = mapper.writerFor(Message.class);
         reader = mapper.reader(Message.class);
     }
@@ -124,7 +146,14 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                         new ByteBufInputStream(content.content()));
 
                 if (m instanceof Chat) {
-                    gameLoop.chat(((Chat) m).getMessage());
+                    String orig = ((Chat) m).getMessage();
+                    if (orig != null && !orig.trim().isEmpty()) {
+                        String clean = htmlCleaner.clean(orig);
+                        if (clean.isEmpty()) {
+                            clean = "[message deleted]";
+                        }
+                        gameLoop.chat(clean);
+                    }
                 }
             }
         } finally {

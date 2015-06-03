@@ -36,6 +36,7 @@ dependencies {
     compile "com.squareup.dagger:dagger:1.2.2"
     compile "com.squareup.dagger:dagger-compiler:1.2.2"
     compile "com.fasterxml.jackson.core:jackson-databind:2.5.3"
+    compile "org.jsoup:jsoup:1.8.2"
 
     testCompile "org.testng:testng:6.9.4"
     testCompile "org.hamcrest:java-hamcrest:2.0.0.0"
