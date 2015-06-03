@@ -190,3 +190,13 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public
 License along with mmo-server.  If not, see 
 [<http://www.gnu.org/licenses/>](http://www.gnu.org/licenses/).
+
+## Powered by
+
+* [netty](http://netty.io/) Copyright 2014 The Netty Project
+* [jackson](http://wiki.fasterxml.com/JacksonHome)
+* [dagger](http://square.github.io/dagger/) Copyright 2013 Square, Inc.
+* [guava](https://github.com/google/guava)
+* [jsoup](http://jsoup.org/) Copyright 2009-2015 Jonathan Hedley
+* [testng](http://testng.org/)
+* [hamcrest](http://hamcrest.org/JavaHamcrest/) Copyright 2000-2015 www.hamcrest.org
