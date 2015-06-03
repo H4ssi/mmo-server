@@ -34,37 +34,30 @@ public class RoomTest {
         return new GameLoop.Callback() {
             @Override
             public void tick() {
-
             }
 
             @Override
             public void tock() {
-
             }
 
             @Override
             public void cannotEnter() {
-
             }
 
             @Override
-            public void entered(int id, Coord coord) {
-
+            public void entered(PlayerInRoom playerInRoom) {
             }
 
             @Override
             public void left(int id) {
-
             }
 
             @Override
             public void inRoom(List<PlayerInRoom> inRoom) {
-
             }
 
             @Override
             public void chat(String message) {
-
             }
         };
     }
@@ -75,15 +68,14 @@ public class RoomTest {
 
         GameLoop.Callback cb = createDummyCallback();
         assertThat("empty room can be entered",
-                room.enter(new Coord(0, 0), cb),
-                is(new Coord(0, 0)));
+                room.enter(new Coord(1, 2), cb),
+                allOf(
+                        notNullValue(),
+                        hasProperty("id", is(0)),
+                        hasProperty("coord", is(new Coord(1, 2)))));
 
         assertThat("player is in room",
                 room.contents(), hasItem(cb));
-        assertThat("tile is occupied",
-                room.getCoord(cb), is(new Coord(0, 0)));
-        assertThat("first id to be used 0",
-                room.getId(cb), is(0));
     }
 
     @Test
@@ -92,12 +84,38 @@ public class RoomTest {
 
         room.enter(new Coord(0, 0), createDummyCallback());
 
+
         assertThat("player is displaced upon entering if tile is occupied",
                 room.enter(new Coord(0, 0), createDummyCallback()),
                 allOf(
                         notNullValue(),
-                        not(is(new Coord(0, 0)))));
+                        hasProperty("coord", not(is(new Coord(0, 0))))));
 
+    }
+
+    @Test
+    public void useConsecutiveIds() {
+        Room room = new Room();
+
+        assertThat("first player gets id 0",
+                room.enter(new Coord(0, 0), createDummyCallback()).getId(),
+                is(0));
+        GameLoop.Callback cb1 = createDummyCallback();
+        assertThat("second player gets id 1",
+                room.enter(new Coord(0, 0), cb1).getId(),
+                is(1));
+        GameLoop.Callback cb2 = createDummyCallback();
+        assertThat("third player gets id 2",
+                room.enter(new Coord(0, 0), cb2).getId(),
+                is(2));
+        assertThat("first player gets id 0",
+                room.enter(new Coord(0, 0), createDummyCallback()).getId(),
+                is(3));
+        assertThat("id 1 leaves room", room.leave(cb1), is(1));
+        assertThat("id 2 leaves room", room.leave(cb2), is(2));
+        assertThat("next player gets id 1 again",
+                room.enter(new Coord(0, 0), createDummyCallback()).getId(),
+                is(1));
     }
 
     @Test

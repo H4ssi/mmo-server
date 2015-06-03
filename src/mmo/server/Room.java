@@ -23,6 +23,7 @@ package mmo.server;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import mmo.server.model.Coord;
+import mmo.server.model.PlayerInRoom;
 
 import java.util.BitSet;
 import java.util.Collections;
@@ -38,7 +39,7 @@ public class Room {
     public Room() {
     }
 
-    public Coord enter(Coord preferred, GameLoop.Callback what) {
+    public PlayerInRoom enter(Coord preferred, GameLoop.Callback what) {
         for (int range = 0; range < SIZE; ++range) {
             for (int xoff = -range; xoff <= range; ++xoff) {
                 for (int yoff = -range; yoff <= range; ++yoff) {
@@ -57,8 +58,9 @@ public class Room {
 
                     if (!contents.containsKey(candidate)) {
                         contents.put(candidate, what);
-                        ids.put(nextId(), what);
-                        return candidate;
+                        int id = nextId();
+                        ids.put(id, what);
+                        return new PlayerInRoom(id, candidate);
                     }
                 }
             }
@@ -86,13 +88,5 @@ public class Room {
         usedIds.clear(id);
         contents.inverse().remove(cb);
         return id;
-    }
-
-    public int getId(GameLoop.Callback c) {
-        return ids.inverse().get(c);
-    }
-
-    public Coord getCoord(GameLoop.Callback c) {
-        return contents.inverse().get(c);
     }
 }

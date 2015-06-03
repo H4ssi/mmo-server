@@ -28,11 +28,27 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.*;
-import io.netty.util.*;
+import io.netty.handler.codec.http.DefaultHttpContent;
+import io.netty.handler.codec.http.DefaultHttpResponse;
+import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.util.CharsetUtil;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 import mmo.server.GameLoop.Callback;
-import mmo.server.message.*;
-import mmo.server.model.Coord;
+import mmo.server.message.CannotEnter;
+import mmo.server.message.Chat;
+import mmo.server.message.Entered;
+import mmo.server.message.InRoom;
+import mmo.server.message.Left;
+import mmo.server.message.Message;
 import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
@@ -49,7 +65,8 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
     private final HashedWheelTimer timer;
 
     @Inject
-    public NotificationHandler(GameLoop gameLoop, ObjectMapper mapper, HashedWheelTimer timer) {
+    public NotificationHandler(GameLoop gameLoop, ObjectMapper mapper,
+                               HashedWheelTimer timer) {
         this.gameLoop = gameLoop;
         this.timer = timer;
         writer = mapper.writerFor(Message.class);
@@ -87,9 +104,8 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                     }
 
                     @Override
-                    public void entered(int id, Coord coord) {
-                        sendMessage(ctx,
-                                new Entered(id, coord.getX(), coord.getY()));
+                    public void entered(PlayerInRoom playerInRoom) {
+                        sendMessage(ctx, new Entered(playerInRoom));
                     }
 
                     @Override

@@ -20,21 +20,22 @@
 
 package mmo.server.message;
 
-import mmo.server.model.Coord;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import mmo.server.model.PlayerInRoom;
 
-public class Entered extends Coord implements Message {
-    private int id;
+public class Entered implements Message {
+    @JsonUnwrapped
+    private PlayerInRoom playerInRoom;
 
-    public Entered(int id, int x, int y) {
-        super(x, y);
-        this.id = id;
+    public Entered(PlayerInRoom playerInRoom) {
+        this.playerInRoom = playerInRoom;
     }
 
-    public int getId() {
-        return id;
+    public PlayerInRoom getPlayerInRoom() {
+        return playerInRoom;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setPlayerInRoom(PlayerInRoom playerInRoom) {
+        this.playerInRoom = playerInRoom;
     }
 }

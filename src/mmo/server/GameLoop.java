@@ -48,7 +48,7 @@ public class GameLoop {
 
         void cannotEnter();
 
-        void entered(int id, Coord coord);
+        void entered(PlayerInRoom playerInRoom);
 
         void left(int id);
 
@@ -105,18 +105,15 @@ public class GameLoop {
             public void run() {
                 callbacks.add(cb);
 
-                Coord coord = room.enter(new Coord(8, 8), cb);
-                if (coord == null) {
+                PlayerInRoom playerInRoom = room.enter(new Coord(8, 8), cb);
+                if (playerInRoom == null) {
                     cb.cannotEnter();
                 } else {
-                    List<PlayerInRoom> data = new LinkedList<PlayerInRoom>();
+                    List<PlayerInRoom> data = new LinkedList<>();
                     for (Callback c : room.contents()) {
-                        c.entered(room.getId(cb), coord);
+                        c.entered(playerInRoom);
                         if (c != cb) {
-                            data.add(new PlayerInRoom(
-                                    room.getId(c),
-                                    room.getCoord(c)
-                            ));
+                            data.add(playerInRoom);
                         }
                     }
 
