@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.Set;
 
 public class Room {
-    private final static int SIZE = 16;
+    public final static int SIZE = 16;
 
     private final BiMap<Integer, GameLoop.Callback> ids = HashBiMap.create();
     private final BiMap<Coord, GameLoop.Callback> contents = HashBiMap.create();
