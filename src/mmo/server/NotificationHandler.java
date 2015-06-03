@@ -64,11 +64,15 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
     private final HashedWheelTimer timer;
 
+    private final HtmlCleaner htmlCleaner;
+
     @Inject
     public NotificationHandler(GameLoop gameLoop, ObjectMapper mapper,
-                               HashedWheelTimer timer) {
+                               HashedWheelTimer timer,
+                               HtmlCleaner htmlCleaner) {
         this.gameLoop = gameLoop;
         this.timer = timer;
+        this.htmlCleaner = htmlCleaner;
         writer = mapper.writerFor(Message.class);
         reader = mapper.reader(Message.class);
     }
@@ -140,8 +144,15 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                         new ByteBufInputStream(content.content()));
 
                 if (m instanceof Chat) {
-                    gameLoop.chat(((Chat) m).getMessage());
+                    String orig = ((Chat) m).getMessage();
+                    if (orig != null && !orig.trim().isEmpty()) {
+                        String clean = htmlCleaner.clean(orig);
+                        if (clean.isEmpty()) {
+                            clean = "[message deleted]";
+                        }
+                        gameLoop.chat(clean);
                 }
+            }
             }
         } finally {
             ReferenceCountUtil.release(msg);
