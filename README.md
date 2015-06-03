@@ -125,6 +125,10 @@ which means
 * or, a client sends you a message (when the message is sent from the server 
   to the client)
 
+Chat messages are supposed to be HTML encoded (Thus clients should handle
+rendering and special characters like `<`, `>` etc. correctly). Client
+input is sanitized by the server prior to dispatching.
+
 #### Entering a room (`Entered`)
 
 Server sends
