@@ -114,7 +114,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
                     @Override
                     public void left(int id) {
-                        sendMessage(ctx, new Left());
+                        sendMessage(ctx, new Left(id));
                     }
 
                     @Override

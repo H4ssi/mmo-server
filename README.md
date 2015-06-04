@@ -17,6 +17,10 @@ The world is sectioned into "rooms". Every room has a static layout, squarely
 tiled. A room measures 16 tiles in length and 16 tiles in width. An entity 
 can only be placed on such a tile (in between positions are disregarded).
 
+A Client can only observe and interact within the bounds of the current room.
+Thus a client has to hop from room to room to gradually observe and interact 
+with the whole world.
+
 ## Protocol
 
 mmo-server communicates over HTTP. You are welcome to use your browser to 
@@ -174,6 +178,20 @@ which means, besides the client, there are two players in this room currently:
 
 This message is sent to the client as second message (right after `Entered`) 
 upon entering a room.
+
+#### Leaving (`Left`)
+
+Server sends
+
+```
+{
+  "type" : ".Left",
+  "id" : 0         /* player room id : int */
+}
+```
+
+which means, the player with local room id `0` just left the room. Upon 
+leaving a room, this is the last message, that is still relevant for this room.
 
 ## License
 
