@@ -25,11 +25,14 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 public class PlayerInRoom {
     private int id;
 
+    private String name;
+
     @JsonUnwrapped
     private Coord coord;
 
-    public PlayerInRoom(int id, Coord coord) {
+    public PlayerInRoom(int id, String name, Coord coord) {
         this.id = id;
+        this.name = name;
         this.coord = coord;
     }
 
@@ -39,6 +42,14 @@ public class PlayerInRoom {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Coord getCoord() {

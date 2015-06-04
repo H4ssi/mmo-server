@@ -33,6 +33,7 @@ import io.netty.util.ReferenceCountUtil;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.regex.Pattern;
 
 public class Handler extends ChannelInboundHandlerAdapter {
     private ChannelInboundHandler handler = null;
@@ -40,6 +41,8 @@ public class Handler extends ChannelInboundHandlerAdapter {
     private final Provider<DefaultHandler> defaultHandlerProvider;
     private final Provider<NotificationHandler> notificationHandlerProvider;
     private final Provider<StatusHandler> statusHandlerProvider;
+
+    private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
 
     @Inject
     public Handler(Provider<DefaultHandler> defaultHandlerProvider,
@@ -56,16 +59,24 @@ public class Handler extends ChannelInboundHandlerAdapter {
         if (msg instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) msg;
 
-            switch (request.getUri()) {
+            String[] path = PATH_SEP.split(request.getUri());
+
+            String first = path.length == 1 ? "" : path[1];
+
+            switch (first) {
                 case "":
-                case "/":
                     installHandler(ctx, defaultHandlerProvider.get());
                     break;
-                case "/status":
+                case "status":
                     installHandler(ctx, statusHandlerProvider.get());
                     break;
-                case "/game":
-                    installHandler(ctx, notificationHandlerProvider.get());
+                case "game":
+                    String playerName = path.length >= 3
+                            ? path[2]
+                            : "anonymous";
+                    NotificationHandler h = notificationHandlerProvider.get();
+                    h.setPlayerName(playerName);
+                    installHandler(ctx, h);
                     break;
                 default:
                     installHandler(ctx, null);

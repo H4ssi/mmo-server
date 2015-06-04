@@ -59,6 +59,11 @@ public class RoomTest {
             @Override
             public void chat(int id, String message) {
             }
+
+            @Override
+            public String getPlayerName() {
+                return "dummy";
+            }
         };
     }
 

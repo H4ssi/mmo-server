@@ -60,7 +60,8 @@ public class Room {
                         contents.put(candidate, what);
                         int id = nextId();
                         ids.put(id, what);
-                        return new PlayerInRoom(id, candidate);
+                        return new PlayerInRoom(
+                                id, what.getPlayerName(), candidate);
                     }
                 }
             }

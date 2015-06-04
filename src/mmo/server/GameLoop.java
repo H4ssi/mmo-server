@@ -55,6 +55,8 @@ public class GameLoop {
         void inRoom(List<PlayerInRoom> inRoom);
 
         void chat(int id, String message);
+
+        String getPlayerName();
     }
 
     private final HashedWheelTimer timer;
@@ -116,6 +118,7 @@ public class GameLoop {
                         if (cb != entering) {
                             data.add(new PlayerInRoom(
                                     room.getId(cb),
+                                    cb.getPlayerName(),
                                     room.getCoord(cb)
                             ));
                         }

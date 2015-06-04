@@ -59,6 +59,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
     private Callback cb;
     private Integer roomId = null;
+    private String playerName;
     private final GameLoop gameLoop;
     private final ObjectWriter writer;
     private final ObjectReader reader;
@@ -136,6 +137,11 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                     @Override
                     public void tick() {
 
+                    }
+
+                    @Override
+                    public String getPlayerName() {
+                        return playerName;
                     }
                 };
                 gameLoop.login(cb);
@@ -235,5 +241,9 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
             cb = null;
         }
         super.channelInactive(ctx);
+    }
+
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
     }
 }

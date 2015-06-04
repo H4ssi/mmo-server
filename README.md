@@ -61,7 +61,8 @@ The data is JSON formatted, see this sample:
 ### Notification channel
 
 ```
-GET /game
+GET /game           /* login as "anonymous" */
+GET /game/your-name /* login as "your-name" */
 ```
 
 The notification channel is used to send and receive events to and from the 
@@ -72,6 +73,10 @@ the client and vice versa).
 
 Take a look at the communication with your browser: 
 [http://localhost:8080/game](http://localhost:8080/game)
+
+You may choose between logging in anonymously or with a name of your choice. 
+Names are _not_ unique, i.e. multiple users may very well use the very same 
+name.
 
 #### Channel initialization
 
@@ -106,6 +111,7 @@ E.g.
   "x" : 7,
   "y" : 8,
   "id" : 1
+  "name" : "florian"
 }
 ```
 
@@ -145,15 +151,16 @@ Server sends
 ```
 {
   "type" : ".Entered",
-  "x" : 7,  /* x coordinate : int */
-  "y" : 8,  /* y coordinate : int */
-  "id" : 1  /* room local id of player : int */ 
+  "x" : 7,           /* x coordinate : int */
+  "y" : 8,           /* y coordinate : int */
+  "id" : 1           /* room local id of player : int */ 
+  "name" : "florian" /* name of entering user : string */
 }
 ```
 
-which means, a player entered the room and was placed on tile `[7/8]`. As 
-long as the player stays in this room, they will be identified by the id
- `1`.
+which means, a player named `"florian"` entered the room and was placed on tile 
+`[7/8]`. As long as the player stays in this room, they will be identified by 
+the id  `1`.
  
 The server will also notify the entering player themselves, in fact it is the
 very first message sent to the client upon entering a room.
@@ -168,18 +175,20 @@ Server sends
     "id" : 0,       /* player room id : int */
     "x" : 8,        /* player x coordinate : int */
     "y" : 8         /* player y coordinate : int */
+    "name" : "bert" /* player name : string */
   }, {
     "id" : 2,
     "x" : 7,
     "y" : 8
+    "name" : "ernie"
   } ]
 }
 ```
 
 which means, besides the client, there are two players in this room currently:
 
-* Player `0` on tile `[8/8]`
-* Player `2` on tile `[7/8]`
+* Player `"bert"` with local room id `0` on tile `[8/8]`
+* Player `"ernie"` with local room id `2` on tile `[7/8]`
 
 This message is sent to the client as second message (right after `Entered`) 
 upon entering a room.
