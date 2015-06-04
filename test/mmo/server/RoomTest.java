@@ -57,7 +57,7 @@ public class RoomTest {
             }
 
             @Override
-            public void chat(String message) {
+            public void chat(int id, String message) {
             }
         };
     }

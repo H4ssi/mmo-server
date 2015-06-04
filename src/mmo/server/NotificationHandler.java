@@ -58,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
     private Callback cb;
+    private Integer roomId = null;
     private final GameLoop gameLoop;
     private final ObjectWriter writer;
     private final ObjectReader reader;
@@ -109,6 +110,9 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
                     @Override
                     public void entered(PlayerInRoom playerInRoom) {
+                        if (roomId == null) {
+                            roomId = playerInRoom.getId();
+                        }
                         sendMessage(ctx, new Entered(playerInRoom));
                     }
 
@@ -125,8 +129,8 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                     }
 
                     @Override
-                    public void chat(String message) {
-                        sendMessage(ctx, new Chat(message));
+                    public void chat(int id, String message) {
+                        sendMessage(ctx, new Chat(id, message));
                     }
 
                     @Override
@@ -150,9 +154,9 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                         if (clean.isEmpty()) {
                             clean = "[message deleted]";
                         }
-                        gameLoop.chat(clean);
+                        gameLoop.chat(roomId, clean);
+                    }
                 }
-            }
             }
         } finally {
             ReferenceCountUtil.release(msg);
@@ -199,7 +203,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
             timer.newTimeout(new TimerTask() {
                 @Override
                 public void run(Timeout timeout) throws Exception {
-                    sendMessage(ctx, new Chat(msg));
+                    sendMessage(ctx, new Chat(null, msg));
                 }
             }, delay, TimeUnit.SECONDS);
             delay += 1;

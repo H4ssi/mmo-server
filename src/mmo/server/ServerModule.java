@@ -20,6 +20,7 @@
 
 package mmo.server;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -52,6 +53,7 @@ public class ServerModule {
                                 .inclusion(JsonTypeInfo.As.PROPERTY)
                                 .typeProperty("type")
                 )
+                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }

@@ -118,7 +118,8 @@ Server or client sends
 ```
 {
   "type" : ".Chat",
-  "message" : "Welcome to mmo-server!"  /* chat message : string */
+  "id" : 12                   /* author local room  id : optional[int] */
+  "message" : "Hello there!"  /* chat message : string */
 }
 ```
 
@@ -126,8 +127,12 @@ which means
 
 * a client wants to send a chat message to the room (when the message is sent
   from the client to the server)
+  * clients shall not include the `id` field when sending messages. The id 
+    will be filled out by the server.
 * or, a client sends you a message (when the message is sent from the server 
   to the client)
+  * if the chat message was sent from a client, the `id` field will be included
+  * the `id` field can be ommited, e.g. for global server status broadcasts
 
 Chat messages are supposed to be HTML encoded (Thus clients should handle
 rendering and special characters like `<`, `>` etc. correctly). Client

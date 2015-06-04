@@ -54,7 +54,7 @@ public class GameLoop {
 
         void inRoom(List<PlayerInRoom> inRoom);
 
-        void chat(String message);
+        void chat(int id, String message);
     }
 
     private final HashedWheelTimer timer;
@@ -137,12 +137,12 @@ public class GameLoop {
         });
     }
 
-    public void chat(final String message) {
+    public void chat(final int id, final String message) {
         loop.submit(new Runnable() {
             @Override
             public void run() {
                 for (Callback c : room.contents()) {
-                    c.chat(message);
+                    c.chat(id, message);
                 }
             }
         });

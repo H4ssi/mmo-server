@@ -21,13 +21,24 @@
 package mmo.server.message;
 
 public class Chat implements Message {
+    private Integer id;
+
     private String message;
 
     public Chat() {
     }
 
-    public Chat(String message) {
+    public Chat(Integer id, String message) {
+        this.id = id;
         this.message = message;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getMessage() {
