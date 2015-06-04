@@ -89,4 +89,12 @@ public class Room {
         contents.inverse().remove(cb);
         return id;
     }
+
+    public int getId(GameLoop.Callback c) {
+        return ids.inverse().get(c);
+    }
+
+    public Coord getCoord(GameLoop.Callback c) {
+        return contents.inverse().get(c);
+    }
 }

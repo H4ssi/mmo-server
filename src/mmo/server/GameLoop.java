@@ -99,25 +99,29 @@ public class GameLoop {
         timer.newTimeout(task, 1, TimeUnit.SECONDS);
     }
 
-    public void login(final Callback cb) {
+    public void login(final Callback entering) {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                callbacks.add(cb);
+                callbacks.add(entering);
 
-                PlayerInRoom playerInRoom = room.enter(new Coord(8, 8), cb);
-                if (playerInRoom == null) {
-                    cb.cannotEnter();
+                PlayerInRoom enteringPlayerInRoom =
+                        room.enter(new Coord(8, 8), entering);
+                if (enteringPlayerInRoom == null) {
+                    entering.cannotEnter();
                 } else {
                     List<PlayerInRoom> data = new LinkedList<>();
-                    for (Callback c : room.contents()) {
-                        c.entered(playerInRoom);
-                        if (c != cb) {
-                            data.add(playerInRoom);
+                    for (Callback cb : room.contents()) {
+                        cb.entered(enteringPlayerInRoom);
+                        if (cb != entering) {
+                            data.add(new PlayerInRoom(
+                                    room.getId(cb),
+                                    room.getCoord(cb)
+                            ));
                         }
                     }
 
-                    cb.inRoom(data);
+                    entering.inRoom(data);
                 }
             }
         });
