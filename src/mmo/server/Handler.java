@@ -59,7 +59,7 @@ public class Handler extends ChannelInboundHandlerAdapter {
         if (msg instanceof HttpRequest) {
             HttpRequest request = (HttpRequest) msg;
 
-            String[] path = PATH_SEP.split(request.getUri());
+            String[] path = PATH_SEP.split(request.getUri(), -1);
 
             String first = path.length == 1 ? "" : path[1];
 
