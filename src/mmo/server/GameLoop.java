@@ -39,7 +39,8 @@ import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class GameLoop {
-    private final DefaultEventExecutorGroup loop;
+    private final DefaultEventExecutorGroup loop =
+            new DefaultEventExecutorGroup(1);
     private Room room = new Room();
 
     public interface Callback {
@@ -81,7 +82,6 @@ public class GameLoop {
     public GameLoop(HashedWheelTimer timer) {
         this.timer = timer;
         schedule();
-        loop = new DefaultEventExecutorGroup(1);
     }
 
     private void tock() {
