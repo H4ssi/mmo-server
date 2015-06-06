@@ -43,15 +43,19 @@ public class Handler extends ChannelInboundHandlerAdapter {
     private final Provider<NotificationHandler> notificationHandlerProvider;
     private final Provider<StatusHandler> statusHandlerProvider;
 
+    private final MessageHub messageHub;
+
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
 
     @Inject
     public Handler(Provider<DefaultHandler> defaultHandlerProvider,
                    Provider<NotificationHandler> notificationHandlerProvider,
-                   Provider<StatusHandler> statusHandlerProvider) {
+                   Provider<StatusHandler> statusHandlerProvider, MessageHub
+                               messageHub) {
         this.defaultHandlerProvider = defaultHandlerProvider;
         this.notificationHandlerProvider = notificationHandlerProvider;
         this.statusHandlerProvider = statusHandlerProvider;
+        this.messageHub = messageHub;
     }
 
     @Override
@@ -72,12 +76,12 @@ public class Handler extends ChannelInboundHandlerAdapter {
                     installHandler(ctx, statusHandlerProvider.get());
                     break;
                 case "game":
-                    Player playerName = new Player(
+                    Player player = new Player(
                             path.length >= 3
                                     ? path[2]
                                     : "anonymous");
                     NotificationHandler h = notificationHandlerProvider.get();
-                    h.setPlayer(playerName);
+                    h.setReceiver(messageHub.register(player, ctx.channel()));
                     installHandler(ctx, h);
                     break;
                 default:
