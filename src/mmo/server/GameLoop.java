@@ -27,6 +27,7 @@ import io.netty.util.TimerTask;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.Future;
 import mmo.server.model.Coord;
+import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
@@ -56,7 +57,7 @@ public class GameLoop {
 
         void chat(int id, String message);
 
-        String getPlayerName();
+        Player getPlayer();
     }
 
     private final HashedWheelTimer timer;
@@ -118,7 +119,7 @@ public class GameLoop {
                         if (cb != entering) {
                             data.add(new PlayerInRoom(
                                     room.getId(cb),
-                                    cb.getPlayerName(),
+                                    cb.getPlayer(),
                                     room.getCoord(cb)
                             ));
                         }

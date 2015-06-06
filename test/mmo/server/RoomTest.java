@@ -21,6 +21,7 @@
 package mmo.server;
 
 import mmo.server.model.Coord;
+import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
 import org.testng.annotations.Test;
 
@@ -61,8 +62,8 @@ public class RoomTest {
             }
 
             @Override
-            public String getPlayerName() {
-                return "dummy";
+            public Player getPlayer() {
+                return new Player("dummy");
             }
         };
     }

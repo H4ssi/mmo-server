@@ -49,6 +49,7 @@ import mmo.server.message.Entered;
 import mmo.server.message.InRoom;
 import mmo.server.message.Left;
 import mmo.server.message.Message;
+import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
@@ -59,7 +60,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
 
     private Callback cb;
     private Integer roomId = null;
-    private String playerName;
+    private Player player;
     private final GameLoop gameLoop;
     private final ObjectWriter writer;
     private final ObjectReader reader;
@@ -140,8 +141,8 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                     }
 
                     @Override
-                    public String getPlayerName() {
-                        return playerName;
+                    public Player getPlayer() {
+                        return player;
                     }
                 };
                 gameLoop.login(cb);
@@ -243,7 +244,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
         super.channelInactive(ctx);
     }
 
-    public void setPlayerName(String playerName) {
-        this.playerName = playerName;
+    public void setPlayer(Player playerName) {
+        this.player = playerName;
     }
 }

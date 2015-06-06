@@ -20,44 +20,21 @@
 
 package mmo.server.model;
 
-import com.fasterxml.jackson.annotation.JsonUnwrapped;
+public class Player {
+    private String name;
 
-public class PlayerInRoom {
-    private int id;
-
-    @JsonUnwrapped
-    private Player player;
-
-    @JsonUnwrapped
-    private Coord coord;
-
-    public PlayerInRoom(int id, Player player, Coord coord) {
-        this.id = id;
-        this.player = player;
-        this.coord = coord;
+    public Player() {
     }
 
-    public int getId() {
-        return id;
+    public Player(String name) {
+        this.name = name;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public String getName() {
+        return name;
     }
 
-    public Player getPlayer() {
-        return player;
-    }
-
-    public void setPlayer(Player player) {
-        this.player = player;
-    }
-
-    public Coord getCoord() {
-        return coord;
-    }
-
-    public void setCoord(Coord coord) {
-        this.coord = coord;
+    public void setName(String name) {
+        this.name = name;
     }
 }

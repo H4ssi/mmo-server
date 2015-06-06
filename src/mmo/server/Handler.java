@@ -30,6 +30,7 @@ import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCountUtil;
+import mmo.server.model.Player;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -71,11 +72,12 @@ public class Handler extends ChannelInboundHandlerAdapter {
                     installHandler(ctx, statusHandlerProvider.get());
                     break;
                 case "game":
-                    String playerName = path.length >= 3
-                            ? path[2]
-                            : "anonymous";
+                    Player playerName = new Player(
+                            path.length >= 3
+                                    ? path[2]
+                                    : "anonymous");
                     NotificationHandler h = notificationHandlerProvider.get();
-                    h.setPlayerName(playerName);
+                    h.setPlayer(playerName);
                     installHandler(ctx, h);
                     break;
                 default:
