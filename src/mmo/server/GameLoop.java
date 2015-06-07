@@ -29,8 +29,14 @@ import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.Future;
-import mmo.server.message.*;
+import mmo.server.message.CannotEnter;
+import mmo.server.message.Chat;
+import mmo.server.message.Entered;
+import mmo.server.message.InRoom;
+import mmo.server.message.Left;
+import mmo.server.message.Moving;
 import mmo.server.model.Coord;
+import mmo.server.model.Direction;
 import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
 
@@ -152,5 +158,17 @@ public class GameLoop {
 
     public Future<?> shutdownGracefully() {
         return loop.shutdownGracefully();
+    }
+
+    public void moving(final Player player, final Direction dir) {
+        loop.submit(new Runnable() {
+            @Override
+            public void run() {
+                messageHub.sendMessage(
+                        room.contents(),
+                        new Moving(room.getId(player), dir)
+                );
+            }
+        });
     }
 }

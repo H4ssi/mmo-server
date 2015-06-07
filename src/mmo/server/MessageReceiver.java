@@ -32,6 +32,8 @@ import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import mmo.server.message.Chat;
 import mmo.server.message.Message;
+import mmo.server.message.Moving;
+import mmo.server.model.Direction;
 import mmo.server.model.Player;
 
 import java.io.IOException;
@@ -80,7 +82,11 @@ public class MessageReceiver {
         Message m = reader.readValue(
                 new ByteBufInputStream(data));
 
-        if (m instanceof Chat) {
+        if (m instanceof Moving) {
+            Direction dir = ((Moving) m).getDirection();
+
+            gameLoop.moving(player, dir);
+        } else if (m instanceof Chat) {
             String orig = ((Chat) m).getMessage();
             if (orig != null && !orig.trim().isEmpty()) {
                 String clean = htmlCleaner.clean(orig);
