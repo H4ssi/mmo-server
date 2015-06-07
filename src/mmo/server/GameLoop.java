@@ -54,39 +54,13 @@ public class GameLoop {
     private Room room = new Room();
 
     private final HashedWheelTimer timer;
-    private boolean tickTock = false;
-    private TimerTask task = new TimerTask() {
 
-        @Override
-        public void run(Timeout timeout) throws Exception {
-            tickTock ^= true;
-            if (tickTock) {
-                tick();
-            } else {
-                tock();
-            }
-            schedule();
-        }
-    };
     private Set<Player> players = Sets.newConcurrentHashSet();
 
     @Inject
     public GameLoop(MessageHub messageHub, HashedWheelTimer timer) {
         this.messageHub = messageHub;
         this.timer = timer;
-        schedule();
-    }
-
-    private void tock() {
-        System.out.println("tock"); // TODO remove
-    }
-
-    private void tick() {
-        System.out.println("tick"); // TODO remove
-    }
-
-    private void schedule() {
-        timer.newTimeout(task, 1, TimeUnit.SECONDS);
     }
 
     public void login(final Player entering) {
