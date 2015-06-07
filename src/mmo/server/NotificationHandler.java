@@ -23,26 +23,20 @@ package mmo.server;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.*;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
+import mmo.server.model.Player;
 
 import javax.inject.Inject;
 
 public class NotificationHandler extends ChannelInboundHandlerAdapter {
-
-    private MessageHub.Receiver receiver;
+    private final MessageReceiverFactory receiverFactory;
+    private MessageReceiver receiver;
 
     @Inject
-    public NotificationHandler() {
+    public NotificationHandler(MessageReceiverFactory receiverFactory) {
+        this.receiverFactory = receiverFactory;
     }
 
     public void channelRead(final ChannelHandlerContext ctx, Object msg)
@@ -62,7 +56,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
                 ctx.write(res);
                 send(ctx, "<!DOCTYPE html><html><body><pre>\n");
 
-                receiver.init();
+                receiver.init(ctx.channel());
             } else if (msg instanceof LastHttpContent) {
                 System.out.println("client end of data");
             } else if (msg instanceof HttpContent) {
@@ -85,7 +79,7 @@ public class NotificationHandler extends ChannelInboundHandlerAdapter {
         super.channelInactive(ctx);
     }
 
-    public void setReceiver(MessageHub.Receiver playerName) {
-        this.receiver = playerName;
+    public void setReceiver(Player player) {
+        this.receiver = receiverFactory.create(player);
     }
 }

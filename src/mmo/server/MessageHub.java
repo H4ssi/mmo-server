@@ -23,7 +23,6 @@ package mmo.server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultHttpContent;
@@ -34,7 +33,6 @@ import mmo.server.model.Player;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,11 +44,9 @@ public class MessageHub {
             new ConcurrentHashMap<>();
 
     private final ObjectWriter writer;
-    private final MessageReceiverFactory receiverFactory;
 
     @Inject
-    public MessageHub(ObjectMapper mapper, MessageReceiverFactory receiverFactory) {
-        this.receiverFactory = receiverFactory;
+    public MessageHub(ObjectMapper mapper) {
         writer = mapper.writerFor(Message.class);
     }
 
@@ -77,18 +73,8 @@ public class MessageHub {
         }
     }
 
-    public interface Receiver {
-        void init();
-
-        void receive(ByteBuf data) throws IOException;
-
-        void exit();
-    }
-
-    public Receiver register(final Player player, final Channel channel) {
+    public void register(final Player player, final Channel channel) {
         channels.putIfAbsent(player, channel);
-
-        return receiverFactory.create(player);
     }
 
     private DefaultHttpContent packMassage(Message msg) throws JsonProcessingException {
@@ -97,4 +83,7 @@ public class MessageHub {
                         writer.writeValueAsBytes(msg)));
     }
 
+    public void unregister(Player player) {
+        channels.remove(player);
+    }
 }

@@ -26,6 +26,7 @@ import com.google.auto.factory.AutoFactory;
 import com.google.auto.factory.Provided;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
@@ -37,7 +38,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @AutoFactory
-public class MessageReceiver implements MessageHub.Receiver {
+public class MessageReceiver {
     private final ObjectReader reader;
 
     private final HashedWheelTimer timer;
@@ -69,13 +70,12 @@ public class MessageReceiver implements MessageHub.Receiver {
         this.player = player;
     }
 
-    @Override
-    public void init() {
+    public void init(Channel channel) {
+        messageHub.register(player, channel);
         gameLoop.login(player);
         welcomeMessages(player);
     }
 
-    @Override
     public void receive(ByteBuf data) throws IOException {
         Message m = reader.readValue(
                 new ByteBufInputStream(data));
@@ -92,9 +92,9 @@ public class MessageReceiver implements MessageHub.Receiver {
         }
     }
 
-    @Override
     public void exit() {
         gameLoop.logout(player);
+        messageHub.unregister(player);
     }
 
     private void welcomeMessages(final Player player) {

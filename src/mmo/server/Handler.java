@@ -23,12 +23,7 @@ package mmo.server;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import io.netty.util.ReferenceCountUtil;
 import mmo.server.model.Player;
 
@@ -43,19 +38,15 @@ public class Handler extends ChannelInboundHandlerAdapter {
     private final Provider<NotificationHandler> notificationHandlerProvider;
     private final Provider<StatusHandler> statusHandlerProvider;
 
-    private final MessageHub messageHub;
-
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
 
     @Inject
     public Handler(Provider<DefaultHandler> defaultHandlerProvider,
                    Provider<NotificationHandler> notificationHandlerProvider,
-                   Provider<StatusHandler> statusHandlerProvider, MessageHub
-                               messageHub) {
+                   Provider<StatusHandler> statusHandlerProvider) {
         this.defaultHandlerProvider = defaultHandlerProvider;
         this.notificationHandlerProvider = notificationHandlerProvider;
         this.statusHandlerProvider = statusHandlerProvider;
-        this.messageHub = messageHub;
     }
 
     @Override
@@ -81,7 +72,7 @@ public class Handler extends ChannelInboundHandlerAdapter {
                                     ? path[2]
                                     : "anonymous");
                     NotificationHandler h = notificationHandlerProvider.get();
-                    h.setReceiver(messageHub.register(player, ctx.channel()));
+                    h.setReceiver(player);
                     installHandler(ctx, h);
                     break;
                 default:
