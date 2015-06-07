@@ -20,8 +20,6 @@
 
 package mmo.server.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 public class Player {
     private String name;
 
@@ -38,17 +36,5 @@ public class Player {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    // TODO refactor
-    @JsonIgnore
-    private Integer roomId = null;
-
-    public Integer getRoomId() {
-        return roomId;
-    }
-
-    public void setRoomId(Integer roomId) {
-        this.roomId = roomId;
     }
 }

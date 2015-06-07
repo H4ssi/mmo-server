@@ -93,9 +93,6 @@ public class GameLoop {
                 if (enteringPlayerInRoom == null) {
                     messageHub.sendMessage(entering, new CannotEnter());
                 } else {
-                    enteringPlayerInRoom.getPlayer().setRoomId
-                            (enteringPlayerInRoom.getId()); // TODO remove
-
                     messageHub.sendMessage(
                             room.contents(),
                             new Entered(enteringPlayerInRoom));
@@ -129,24 +126,26 @@ public class GameLoop {
         });
     }
 
-    public void logout(final Player cb) {
+    public void logout(final Player leaving) {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                int id = room.leave(cb);
+                int id = room.leave(leaving);
 
                 messageHub.sendMessage(room.contents(), new Left(id));
 
-                players.remove(cb);
+                players.remove(leaving);
             }
         });
     }
 
-    public void chat(final int id, final String message) {
+    public void chat(final Player author, final String message) {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                messageHub.sendMessage(room.contents(), new Chat(id, message));
+                messageHub.sendMessage(
+                        room.contents(),
+                        new Chat(room.getId(author), message));
             }
         });
     }

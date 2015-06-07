@@ -87,7 +87,7 @@ public class MessageReceiver {
                 if (clean.isEmpty()) {
                     clean = "[message deleted]";
                 }
-                gameLoop.chat(player.getRoomId(), clean);
+                gameLoop.chat(player, clean);
             }
         }
     }
