@@ -48,7 +48,6 @@ public class MessageReceiver implements MessageHub.Receiver {
 
     private final MessageHub messageHub;
 
-    private final GameLoop.Callback cb;
     private final Player player;
 
     public MessageReceiver(@Provided ObjectMapper mapper,
@@ -56,7 +55,7 @@ public class MessageReceiver implements MessageHub.Receiver {
                            @Provided HtmlCleaner htmlCleaner,
                            @Provided GameLoop gameLoop,
                            @Provided MessageHub messageHub,
-                           GameLoop.Callback cb, Player player) {
+                           Player player) {
         reader = mapper.reader(Message.class);
 
         this.timer = timer;
@@ -67,13 +66,12 @@ public class MessageReceiver implements MessageHub.Receiver {
 
         this.messageHub = messageHub;
 
-        this.cb = cb;
         this.player = player;
     }
 
     @Override
     public void init() {
-        gameLoop.login(cb);
+        gameLoop.login(player);
         welcomeMessages(player);
     }
 
@@ -96,7 +94,7 @@ public class MessageReceiver implements MessageHub.Receiver {
 
     @Override
     public void exit() {
-        gameLoop.logout(cb);
+        gameLoop.logout(player);
     }
 
     private void welcomeMessages(final Player player) {

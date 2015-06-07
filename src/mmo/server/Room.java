@@ -23,6 +23,7 @@ package mmo.server;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import mmo.server.model.Coord;
+import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
 
 import java.util.BitSet;
@@ -32,14 +33,14 @@ import java.util.Set;
 public class Room {
     public final static int SIZE = 16;
 
-    private final BiMap<Integer, GameLoop.Callback> ids = HashBiMap.create();
-    private final BiMap<Coord, GameLoop.Callback> contents = HashBiMap.create();
+    private final BiMap<Integer, Player> ids = HashBiMap.create();
+    private final BiMap<Coord, Player> contents = HashBiMap.create();
     private final BitSet usedIds = new BitSet(SIZE * SIZE);
 
     public Room() {
     }
 
-    public PlayerInRoom enter(Coord preferred, GameLoop.Callback what) {
+    public PlayerInRoom enter(Coord preferred, Player who) {
         for (int range = 0; range < SIZE; ++range) {
             for (int xoff = -range; xoff <= range; ++xoff) {
                 for (int yoff = -range; yoff <= range; ++yoff) {
@@ -57,11 +58,10 @@ public class Room {
                     }
 
                     if (!contents.containsKey(candidate)) {
-                        contents.put(candidate, what);
+                        contents.put(candidate, who);
                         int id = nextId();
-                        ids.put(id, what);
-                        return new PlayerInRoom(
-                                id, what.getPlayer(), candidate);
+                        ids.put(id, who);
+                        return new PlayerInRoom(id, who, candidate);
                     }
                 }
             }
@@ -80,22 +80,22 @@ public class Room {
                 .getY() >= 0 && candidate.getY() < SIZE;
     }
 
-    public Set<GameLoop.Callback> contents() {
+    public Set<Player> contents() {
         return Collections.unmodifiableSet(contents.values());
     }
 
-    public int leave(GameLoop.Callback cb) {
+    public int leave(Player cb) {
         int id = ids.inverse().remove(cb);
         usedIds.clear(id);
         contents.inverse().remove(cb);
         return id;
     }
 
-    public int getId(GameLoop.Callback c) {
-        return ids.inverse().get(c);
+    public int getId(Player player) {
+        return ids.inverse().get(player);
     }
 
-    public Coord getCoord(GameLoop.Callback c) {
-        return contents.inverse().get(c);
+    public Coord getCoord(Player player) {
+        return contents.inverse().get(player);
     }
 }

@@ -46,10 +46,6 @@ public class GameLoop {
     private final MessageHub messageHub;
     private Room room = new Room();
 
-    public interface Callback {
-        Player getPlayer();
-    }
-
     private final HashedWheelTimer timer;
     private boolean tickTock = false;
     private TimerTask task = new TimerTask() {
@@ -65,7 +61,7 @@ public class GameLoop {
             schedule();
         }
     };
-    private Set<Callback> callbacks = Sets.newConcurrentHashSet();
+    private Set<Player> players = Sets.newConcurrentHashSet();
 
     @Inject
     public GameLoop(MessageHub messageHub, HashedWheelTimer timer) {
@@ -86,55 +82,46 @@ public class GameLoop {
         timer.newTimeout(task, 1, TimeUnit.SECONDS);
     }
 
-    public void login(final Callback entering) {
+    public void login(final Player entering) {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                callbacks.add(entering);
+                players.add(entering);
 
                 PlayerInRoom enteringPlayerInRoom =
                         room.enter(new Coord(8, 8), entering);
                 if (enteringPlayerInRoom == null) {
-                    messageHub.sendMessage(
-                            entering.getPlayer(), new CannotEnter());
+                    messageHub.sendMessage(entering, new CannotEnter());
                 } else {
                     enteringPlayerInRoom.getPlayer().setRoomId
                             (enteringPlayerInRoom.getId()); // TODO remove
-                    messageHub.sendMessage(
-                            Sets.newHashSet(Iterables.transform(
-                                    room.contents(),
-                                    new Function<Callback, Player>() {
-                                        @Override
-                                        public Player apply(Callback input) {
-                                            return input.getPlayer();
-                                        }
-                                    }
-                            )),
-                            new Entered(enteringPlayerInRoom)
-                    );
 
-                    Iterable<Callback> others = Iterables.filter(
+                    messageHub.sendMessage(
                             room.contents(),
-                            new Predicate<Callback>() {
+                            new Entered(enteringPlayerInRoom));
+
+                    Iterable<Player> others = Iterables.filter(
+                            room.contents(),
+                            new Predicate<Player>() {
                                 @Override
-                                public boolean apply(Callback input) {
+                                public boolean apply(Player input) {
                                     return input != entering;
                                 }
                             }
                     );
                     Iterable<PlayerInRoom> othresInRoom = Iterables.transform(
-                            others, new Function<Callback, PlayerInRoom>() {
+                            others, new Function<Player, PlayerInRoom>() {
                                 @Override
-                                public PlayerInRoom apply(Callback input) {
+                                public PlayerInRoom apply(Player input) {
                                     return new PlayerInRoom(room
                                             .getId(input),
-                                            input.getPlayer(),
+                                            input,
                                             room.getCoord(input));
                                 }
                             }
                     );
                     messageHub.sendMessage(
-                            entering.getPlayer(),
+                            entering,
                             new InRoom(Iterables.toArray(
                                     othresInRoom, PlayerInRoom.class)));
                 }
@@ -142,23 +129,15 @@ public class GameLoop {
         });
     }
 
-    public void logout(final Callback cb) {
+    public void logout(final Player cb) {
         loop.submit(new Runnable() {
             @Override
             public void run() {
                 int id = room.leave(cb);
 
-                messageHub.sendMessage(Sets.newHashSet(
-                        Iterables.transform(room.contents(),
-                                new Function<Callback, Player>() {
-                                    @Override
-                                    public Player apply(Callback input) {
-                                        return input.getPlayer();
-                                    }
-                                })
-                ), new Left(id));
+                messageHub.sendMessage(room.contents(), new Left(id));
 
-                callbacks.remove(cb);
+                players.remove(cb);
             }
         });
     }
@@ -167,15 +146,7 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                messageHub.sendMessage(Sets.newHashSet(
-                        Iterables.transform(room.contents(),
-                                new Function<Callback, Player>() {
-                                    @Override
-                                    public Player apply(Callback input) {
-                                        return input.getPlayer();
-                                    }
-                                })
-                ), new Chat(id, message));
+                messageHub.sendMessage(room.contents(), new Chat(id, message));
             }
         });
     }

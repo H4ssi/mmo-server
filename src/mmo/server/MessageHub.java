@@ -29,18 +29,13 @@ import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
 import io.netty.util.ReferenceCountUtil;
-import mmo.server.message.Chat;
-import mmo.server.message.InRoom;
-import mmo.server.message.Left;
 import mmo.server.message.Message;
 import mmo.server.model.Player;
-import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -93,14 +88,7 @@ public class MessageHub {
     public Receiver register(final Player player, final Channel channel) {
         channels.putIfAbsent(player, channel);
 
-        final GameLoop.Callback cb = new GameLoop.Callback() {
-            @Override
-            public Player getPlayer() {
-                return player;
-            }
-        };
-
-        return receiverFactory.create(cb, player);
+        return receiverFactory.create(player);
     }
 
     private void sendMessage(Channel channel, Message msg) {
