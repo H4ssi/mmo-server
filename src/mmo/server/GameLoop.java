@@ -23,7 +23,6 @@ package mmo.server;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
@@ -43,7 +42,8 @@ import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 @Singleton
@@ -55,7 +55,13 @@ public class GameLoop {
 
     private final HashedWheelTimer timer;
 
-    private Set<Player> players = Sets.newConcurrentHashSet();
+    private static class PlayerState {
+        private boolean isMoving = false;
+        private Direction queuedMoving = null;
+    }
+
+    private ConcurrentMap<Player, PlayerState> players =
+            new ConcurrentHashMap<>();
 
     @Inject
     public GameLoop(MessageHub messageHub, HashedWheelTimer timer) {
@@ -67,7 +73,7 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                players.add(entering);
+                players.put(entering, new PlayerState());
 
                 PlayerInRoom enteringPlayerInRoom =
                         room.enter(new Coord(8, 8), entering);
@@ -139,28 +145,45 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                messageHub.sendMessage(
-                        room.contents(),
-                        new Moving(room.getId(player), dir)
-                );
-                timer.newTimeout(new TimerTask() {
-                    @Override
-                    public void run(Timeout timeout) throws Exception {
-                        move(player, dir);
-                    }
-                }, 66, TimeUnit.MILLISECONDS);
+                PlayerState s = players.get(player);
+                if (!s.isMoving) {
+                    movingNow(player, dir);
+                    s.isMoving = true;
+                } else {
+                    s.queuedMoving = dir;
+                }
             }
         });
+    }
+
+    private void movingNow(final Player player, final Direction dir) {
+        messageHub.sendMessage(
+                room.contents(),
+                new Moving(room.getId(player), dir)
+        );
+        timer.newTimeout(new TimerTask() {
+            @Override
+            public void run(Timeout timeout) throws Exception {
+                move(player, dir);
+            }
+        }, 66, TimeUnit.MILLISECONDS);
     }
 
     private void move(final Player player, final Direction dir) {
         loop.submit(new Runnable() {
             @Override
             public void run() {
+                PlayerState s = players.get(player);
                 messageHub.sendMessage(
                         room.contents(),
                         new Moved(room.getId(player))
                 );
+                if (s.queuedMoving == null) {
+                    s.isMoving = false;
+                } else {
+                    movingNow(player, s.queuedMoving);
+                    s.queuedMoving = null;
+                }
             }
         });
     }
