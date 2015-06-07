@@ -35,17 +35,17 @@ public class Handler extends ChannelInboundHandlerAdapter {
     private ChannelInboundHandler handler = null;
 
     private final Provider<DefaultHandler> defaultHandlerProvider;
-    private final Provider<NotificationHandler> notificationHandlerProvider;
+    private final NotificationHandlerFactory notificationHandlerFactory;
     private final Provider<StatusHandler> statusHandlerProvider;
 
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
 
     @Inject
     public Handler(Provider<DefaultHandler> defaultHandlerProvider,
-                   Provider<NotificationHandler> notificationHandlerProvider,
+                   NotificationHandlerFactory notificationHandlerFactory,
                    Provider<StatusHandler> statusHandlerProvider) {
         this.defaultHandlerProvider = defaultHandlerProvider;
-        this.notificationHandlerProvider = notificationHandlerProvider;
+        this.notificationHandlerFactory = notificationHandlerFactory;
         this.statusHandlerProvider = statusHandlerProvider;
     }
 
@@ -67,13 +67,13 @@ public class Handler extends ChannelInboundHandlerAdapter {
                     installHandler(ctx, statusHandlerProvider.get());
                     break;
                 case "game":
-                    Player player = new Player(
-                            path.length >= 3
-                                    ? path[2]
-                                    : "anonymous");
-                    NotificationHandler h = notificationHandlerProvider.get();
-                    h.setReceiver(player);
-                    installHandler(ctx, h);
+                    installHandler(
+                            ctx,
+                            notificationHandlerFactory.create(
+                                    new Player(
+                                            path.length >= 3
+                                                    ? path[2]
+                                                    : "anonymous")));
                     break;
                 default:
                     installHandler(ctx, null);
