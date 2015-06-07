@@ -22,6 +22,8 @@ package mmo.server;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Iterables;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
@@ -42,6 +44,7 @@ import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -51,11 +54,14 @@ public class GameLoop {
     private final DefaultEventExecutorGroup loop =
             new DefaultEventExecutorGroup(1);
     private final MessageHub messageHub;
-    private Room room = new Room();
+
+    private BiMap<Room, Integer> roomIds = HashBiMap.create();
+    private BiMap<Room, Coord> roomCoords = HashBiMap.create();
 
     private final HashedWheelTimer timer;
 
     private static class PlayerState {
+        private Integer currentRoom = null;
         private boolean isMoving = false;
         private Direction queuedMoving = null;
     }
@@ -67,19 +73,39 @@ public class GameLoop {
     public GameLoop(MessageHub messageHub, HashedWheelTimer timer) {
         this.messageHub = messageHub;
         this.timer = timer;
+
+        Random r = new Random();
+        for (int x = -1; x <= 1; ++x) {
+            for (int y = -1; y <= 1; ++y) {
+                int id = 0;
+                if (!(x == 0 && y == 0)) {
+                    do {
+                        id = r.nextInt();
+                    } while (roomIds.containsValue(id));
+                }
+
+                Room room = new Room();
+                roomIds.put(room, id);
+                roomCoords.put(room, new Coord(x, y));
+            }
+        }
     }
 
     public void login(final Player entering) {
         loop.submit(new Runnable() {
             @Override
             public void run() {
-                players.put(entering, new PlayerState());
+                final Room room = roomIds.inverse().get(0);
 
                 PlayerInRoom enteringPlayerInRoom =
                         room.enter(new Coord(8, 8), entering);
                 if (enteringPlayerInRoom == null) {
                     messageHub.sendMessage(entering, new CannotEnter());
                 } else {
+                    PlayerState s = new PlayerState();
+                    players.put(entering, s);
+                    s.currentRoom = 0;
+
                     messageHub.sendMessage(
                             room.contents(),
                             new Entered(enteringPlayerInRoom));
@@ -106,7 +132,7 @@ public class GameLoop {
                     );
                     messageHub.sendMessage(
                             entering,
-                            new InRoom(Iterables.toArray(
+                            new InRoom(0, Iterables.toArray(
                                     othresInRoom, PlayerInRoom.class)));
                 }
             }
@@ -117,11 +143,12 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
+                PlayerState s = players.remove(leaving);
+                Room room = roomIds.inverse().get(s.currentRoom);
+
                 int id = room.leave(leaving);
 
                 messageHub.sendMessage(room.contents(), new Left(id));
-
-                players.remove(leaving);
             }
         });
     }
@@ -130,6 +157,9 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
+                PlayerState s = players.get(author);
+                Room room = roomIds.inverse().get(s.currentRoom);
+
                 messageHub.sendMessage(
                         room.contents(),
                         new Chat(room.getId(author), message));
@@ -146,8 +176,9 @@ public class GameLoop {
             @Override
             public void run() {
                 PlayerState s = players.get(player);
+                Room room = roomIds.inverse().get(s.currentRoom);
                 if (!s.isMoving) {
-                    movingNow(player, dir);
+                    movingNow(room, player, dir);
                     s.isMoving = true;
                 } else {
                     s.queuedMoving = dir;
@@ -156,7 +187,9 @@ public class GameLoop {
         });
     }
 
-    private void movingNow(final Player player, final Direction dir) {
+    private void movingNow(final Room room,
+                           final Player player,
+                           final Direction dir) {
         messageHub.sendMessage(
                 room.contents(),
                 new Moving(room.getId(player), dir)
@@ -173,6 +206,9 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
+                PlayerState s = players.get(player);
+                Room room = roomIds.inverse().get(s.currentRoom);
+
                 if (room.movePlayer(player, dir)) {
                     messageHub.sendMessage(
                             room.contents(),
@@ -180,12 +216,10 @@ public class GameLoop {
                     );
                 }
 
-                PlayerState s = players.get(player);
-
                 if (s.queuedMoving == null) {
                     s.isMoving = false;
                 } else {
-                    movingNow(player, s.queuedMoving);
+                    movingNow(room, player, s.queuedMoving);
                     s.queuedMoving = null;
                 }
             }

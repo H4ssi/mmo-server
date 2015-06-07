@@ -23,10 +23,23 @@ package mmo.server.message;
 import mmo.server.model.PlayerInRoom;
 
 public class InRoom implements Message {
+    private int room;
     private PlayerInRoom[] players;
 
-    public InRoom(PlayerInRoom[] players) {
+    public InRoom() {
+    }
+
+    public InRoom(int room, PlayerInRoom[] players) {
+        this.room = room;
         this.players = players;
+    }
+
+    public int getRoom() {
+        return room;
+    }
+
+    public void setRoom(int room) {
+        this.room = room;
     }
 
     public PlayerInRoom[] getCoords() {

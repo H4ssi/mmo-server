@@ -171,6 +171,7 @@ Server sends
 ```
 {
   "type" : ".InRoom",
+  "room" : 1337     /* id of current room : int */
   "coords" : [ {    /* list of players currently in this room : array */
     "id" : 0,       /* player room id : int */
     "x" : 8,        /* player x coordinate : int */
@@ -185,7 +186,8 @@ Server sends
 }
 ```
 
-which means, besides the client, there are two players in this room currently:
+which means currently the player is in room `1337`. Besides the player, there 
+are two other players in this room currently:
 
 * Player `"bert"` with local room id `0` on tile `[8/8]`
 * Player `"ernie"` with local room id `2` on tile `[7/8]`
