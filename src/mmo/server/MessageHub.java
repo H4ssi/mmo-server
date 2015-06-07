@@ -91,16 +91,6 @@ public class MessageHub {
         return receiverFactory.create(player);
     }
 
-    private void sendMessage(Channel channel, Message msg) {
-        try {
-            channel.writeAndFlush(
-                    packMassage(msg));
-        } catch (JsonProcessingException e) {
-            // TODO unhandled exception
-            e.printStackTrace();
-        }
-    }
-
     private DefaultHttpContent packMassage(Message msg) throws JsonProcessingException {
         return new DefaultHttpContent(
                 Unpooled.wrappedBuffer(
