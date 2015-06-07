@@ -34,6 +34,7 @@ import mmo.server.message.Chat;
 import mmo.server.message.Entered;
 import mmo.server.message.InRoom;
 import mmo.server.message.Left;
+import mmo.server.message.Moved;
 import mmo.server.message.Moving;
 import mmo.server.model.Coord;
 import mmo.server.model.Direction;
@@ -167,6 +168,24 @@ public class GameLoop {
                 messageHub.sendMessage(
                         room.contents(),
                         new Moving(room.getId(player), dir)
+                );
+                timer.newTimeout(new TimerTask() {
+                    @Override
+                    public void run(Timeout timeout) throws Exception {
+                        move(player, dir);
+                    }
+                }, 66, TimeUnit.MILLISECONDS);
+            }
+        });
+    }
+
+    private void move(final Player player, final Direction dir) {
+        loop.submit(new Runnable() {
+            @Override
+            public void run() {
+                messageHub.sendMessage(
+                        room.contents(),
+                        new Moved(room.getId(player))
                 );
             }
         });
