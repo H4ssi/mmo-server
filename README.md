@@ -228,7 +228,10 @@ License along with mmo-server.  If not, see
 * [netty](http://netty.io/) Copyright 2014 The Netty Project
 * [jackson](http://wiki.fasterxml.com/JacksonHome)
 * [dagger](http://square.github.io/dagger/) Copyright 2013 Square, Inc.
+* [autoFactory](https://github.com/google/auto/tree/master/factory)
+  Copyright 2013 Google, Inc.
 * [guava](https://github.com/google/guava)
 * [jsoup](http://jsoup.org/) Copyright 2009-2015 Jonathan Hedley
 * [testng](http://testng.org/)
-* [hamcrest](http://hamcrest.org/JavaHamcrest/) Copyright 2000-2015 www.hamcrest.org
+* [hamcrest](http://hamcrest.org/JavaHamcrest/) 
+  Copyright 2000-2015 www.hamcrest.org

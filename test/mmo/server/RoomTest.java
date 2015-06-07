@@ -34,34 +34,6 @@ public class RoomTest {
     private static GameLoop.Callback createDummyCallback() {
         return new GameLoop.Callback() {
             @Override
-            public void tick() {
-            }
-
-            @Override
-            public void tock() {
-            }
-
-            @Override
-            public void cannotEnter() {
-            }
-
-            @Override
-            public void entered(PlayerInRoom playerInRoom) {
-            }
-
-            @Override
-            public void left(int id) {
-            }
-
-            @Override
-            public void inRoom(List<PlayerInRoom> inRoom) {
-            }
-
-            @Override
-            public void chat(int id, String message) {
-            }
-
-            @Override
             public Player getPlayer() {
                 return new Player("dummy");
             }
