@@ -23,6 +23,7 @@ package mmo.server;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import mmo.server.model.Coord;
+import mmo.server.model.Direction;
 import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
 
@@ -97,5 +98,25 @@ public class Room {
 
     public Coord getCoord(Player player) {
         return contents.inverse().get(player);
+    }
+
+    public Player at(Coord coord) {
+        return contents.get(coord);
+    }
+
+    public boolean movePlayer(Player player, Direction dir) {
+        Coord current = getCoord(player);
+        Coord target = current.toThe(dir);
+
+        Player other = at(target);
+
+        if (other == null) {
+            contents.forcePut(target, player);
+            return true;
+        } else {
+            contents.forcePut(target, player);
+            contents.forcePut(current, other);
+            return true;
+        }
     }
 }

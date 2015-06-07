@@ -173,11 +173,15 @@ public class GameLoop {
         loop.submit(new Runnable() {
             @Override
             public void run() {
+                if (room.movePlayer(player, dir)) {
+                    messageHub.sendMessage(
+                            room.contents(),
+                            new Moved(room.getId(player))
+                    );
+                }
+
                 PlayerState s = players.get(player);
-                messageHub.sendMessage(
-                        room.contents(),
-                        new Moved(room.getId(player))
-                );
+
                 if (s.queuedMoving == null) {
                     s.isMoving = false;
                 } else {
