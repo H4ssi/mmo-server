@@ -25,11 +25,13 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Iterables;
+import com.google.common.math.IntMath;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.Future;
+import mmo.server.message.Bump;
 import mmo.server.message.CannotEnter;
 import mmo.server.message.Chat;
 import mmo.server.message.Entered;
@@ -97,46 +99,55 @@ public class GameLoop {
             public void run() {
                 final Room room = roomIds.inverse().get(0);
 
-                PlayerInRoom enteringPlayerInRoom =
-                        room.enter(new Coord(8, 8), entering);
-                if (enteringPlayerInRoom == null) {
+                Coord coord = room.findFreeNear(new Coord(8, 8));
+
+                if (coord == null) {
                     messageHub.sendMessage(entering, new CannotEnter());
                 } else {
                     PlayerState s = new PlayerState();
                     players.put(entering, s);
-                    s.currentRoom = 0;
-
-                    messageHub.sendMessage(
-                            room.contents(),
-                            new Entered(enteringPlayerInRoom));
-
-                    Iterable<Player> others = Iterables.filter(
-                            room.contents(),
-                            new Predicate<Player>() {
-                                @Override
-                                public boolean apply(Player input) {
-                                    return input != entering;
-                                }
-                            }
-                    );
-                    Iterable<PlayerInRoom> othresInRoom = Iterables.transform(
-                            others, new Function<Player, PlayerInRoom>() {
-                                @Override
-                                public PlayerInRoom apply(Player input) {
-                                    return new PlayerInRoom(room
-                                            .getId(input),
-                                            input,
-                                            room.getCoord(input));
-                                }
-                            }
-                    );
-                    messageHub.sendMessage(
-                            entering,
-                            new InRoom(0, Iterables.toArray(
-                                    othresInRoom, PlayerInRoom.class)));
+                    enterRoom(s, entering, room, coord);
                 }
             }
         });
+    }
+
+    private void enterRoom(PlayerState state, final Player entering,
+                           final Room room, Coord coord) {
+        PlayerInRoom enteringPlayerInRoom =
+                room.enter(coord, entering);
+
+        int roomId = roomIds.get(room);
+        state.currentRoom = roomId;
+
+        messageHub.sendMessage(
+                room.contents(),
+                new Entered(enteringPlayerInRoom));
+
+        Iterable<Player> others = Iterables.filter(
+                room.contents(),
+                new Predicate<Player>() {
+                    @Override
+                    public boolean apply(Player input) {
+                        return input != entering;
+                    }
+                }
+        );
+        Iterable<PlayerInRoom> othresInRoom = Iterables.transform(
+                others, new Function<Player, PlayerInRoom>() {
+                    @Override
+                    public PlayerInRoom apply(Player input) {
+                        return new PlayerInRoom(room
+                                .getId(input),
+                                input,
+                                room.getCoord(input));
+                    }
+                }
+        );
+        messageHub.sendMessage(
+                entering,
+                new InRoom(roomId, Iterables.toArray(
+                        othresInRoom, PlayerInRoom.class)));
     }
 
     public void logout(final Player leaving) {
@@ -146,11 +157,16 @@ public class GameLoop {
                 PlayerState s = players.remove(leaving);
                 Room room = roomIds.inverse().get(s.currentRoom);
 
-                int id = room.leave(leaving);
-
-                messageHub.sendMessage(room.contents(), new Left(id));
+                leaveRoom(s, leaving, room);
             }
         });
+    }
+
+    private void leaveRoom(PlayerState state, Player leaving, Room room) {
+        int id = room.getId(leaving);
+        messageHub.sendMessage(room.contents(), new Left(id));
+        room.leave(leaving);
+        state.currentRoom = null;
     }
 
     public void chat(final Player author, final String message) {
@@ -209,11 +225,33 @@ public class GameLoop {
                 PlayerState s = players.get(player);
                 Room room = roomIds.inverse().get(s.currentRoom);
 
-                if (room.movePlayer(player, dir)) {
+                Coord target = room.getCoord(player).toThe(dir);
+                if (!room.isCoordInRoom(target)) { // will leave room
+                    Coord n = new Coord(
+                            IntMath.mod(target.getX(), Room.SIZE),
+                            IntMath.mod(target.getY(), Room.SIZE));
+
+                    Room next = roomCoords.inverse().get(
+                            roomCoords.get(room).toThe(dir));
+
+                    n = next.findFreeNear(n);
+                    if (n == null) { // but next room is full
+                        messageHub.sendMessage(
+                                room.contents(),
+                                new Bump(room.getId(player)));
+                    } else { // or else just switch rooms
+                        leaveRoom(s, player, room);
+                        enterRoom(s, player, next, n);
+                    }
+                } else if (room.movePlayer(player, dir)) { // normal move
                     messageHub.sendMessage(
                             room.contents(),
                             new Moved(room.getId(player))
                     );
+                } else { // may fail as well
+                    messageHub.sendMessage(
+                            room.contents(),
+                            new Bump(room.getId(player)));
                 }
 
                 if (s.queuedMoving == null) {

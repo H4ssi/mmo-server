@@ -41,7 +41,7 @@ public class Room {
     public Room() {
     }
 
-    public PlayerInRoom enter(Coord preferred, Player who) {
+    public Coord findFreeNear(Coord preferred) {
         for (int range = 0; range < SIZE; ++range) {
             for (int xoff = -range; xoff <= range; ++xoff) {
                 for (int yoff = -range; yoff <= range; ++yoff) {
@@ -59,15 +59,23 @@ public class Room {
                     }
 
                     if (!contents.containsKey(candidate)) {
-                        contents.put(candidate, who);
-                        int id = nextId();
-                        ids.put(id, who);
-                        return new PlayerInRoom(id, who, candidate);
+                        return candidate;
                     }
                 }
             }
         }
         return null;
+    }
+
+    public PlayerInRoom enter(Coord coord, Player who) {
+        if (contents.containsKey(coord)) {
+            return null;
+        }
+
+        contents.put(coord, who);
+        int id = nextId();
+        ids.put(id, who);
+        return new PlayerInRoom(id, who, coord);
     }
 
     private int nextId() {
@@ -76,7 +84,7 @@ public class Room {
         return id;
     }
 
-    private boolean isCoordInRoom(Coord candidate) {
+    public boolean isCoordInRoom(Coord candidate) {
         return candidate.getX() >= 0 && candidate.getX() < SIZE && candidate
                 .getY() >= 0 && candidate.getY() < SIZE;
     }
@@ -85,10 +93,10 @@ public class Room {
         return Collections.unmodifiableSet(contents.values());
     }
 
-    public int leave(Player cb) {
-        int id = ids.inverse().remove(cb);
+    public int leave(Player player) {
+        int id = ids.inverse().remove(player);
         usedIds.clear(id);
-        contents.inverse().remove(cb);
+        contents.inverse().remove(player);
         return id;
     }
 
