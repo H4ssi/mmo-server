@@ -46,7 +46,9 @@ import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -86,7 +88,35 @@ public class GameLoop {
                     } while (roomIds.containsValue(id));
                 }
 
-                Room room = new Room();
+                Set<Coord> obstacles = new HashSet<>();
+                int a, b;
+                a = r.nextInt(Room.SIZE / 2);
+                b = r.nextInt(Room.SIZE / 2);
+
+                int xbl = Room.SIZE / 4 + Math.min(a, b);
+                int xbu = Room.SIZE / 4 + Math.max(a, b);
+
+                a = r.nextInt(Room.SIZE / 2);
+                b = r.nextInt(Room.SIZE / 2);
+
+                int ybl = Room.SIZE / 4 + Math.min(a, b);
+                int ybu = Room.SIZE / 4 + Math.max(a, b);
+
+                for (int xx = 0; xx < Room.SIZE; ++xx) {
+                    for (int yy = 0; yy < Room.SIZE; ++yy) {
+                        if (x == -1 && xx == 0
+                                || x == 1 && xx == Room.SIZE - 1
+                                || y == -1 && yy == 0
+                                || y == 1 && yy == Room.SIZE - 1
+                                || (!(x == 0 && y == 0)
+                                && xx >= xbl && xx <= xbu
+                                && yy >= ybl && yy <= ybu)) {
+                            obstacles.add(new Coord(xx, yy));
+                        }
+                    }
+                }
+
+                Room room = new Room(obstacles);
                 roomIds.put(room, id);
                 roomCoords.put(room, new Coord(x, y));
             }

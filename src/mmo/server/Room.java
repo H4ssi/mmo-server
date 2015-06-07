@@ -37,8 +37,10 @@ public class Room {
     private final BiMap<Integer, Player> ids = HashBiMap.create();
     private final BiMap<Coord, Player> contents = HashBiMap.create();
     private final BitSet usedIds = new BitSet(SIZE * SIZE);
+    private final Set<Coord> obstacles;
 
-    public Room() {
+    public Room(Set<Coord> obstacles) {
+        this.obstacles = obstacles;
     }
 
     public Coord findFreeNear(Coord preferred) {
@@ -55,6 +57,10 @@ public class Room {
                             preferred.getY() + yoff);
 
                     if (!isCoordInRoom(candidate)) {
+                        continue;
+                    }
+
+                    if (obstacles.contains(candidate)) {
                         continue;
                     }
 
@@ -108,7 +114,7 @@ public class Room {
         return contents.inverse().get(player);
     }
 
-    public Player at(Coord coord) {
+    public Player playerAt(Coord coord) {
         return contents.get(coord);
     }
 
@@ -116,7 +122,11 @@ public class Room {
         Coord current = getCoord(player);
         Coord target = current.toThe(dir);
 
-        Player other = at(target);
+        if (obstacles.contains(target)) {
+            return false;
+        }
+
+        Player other = playerAt(target);
 
         if (other == null) {
             contents.forcePut(target, player);
