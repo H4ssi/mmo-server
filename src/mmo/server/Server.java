@@ -34,14 +34,14 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 public class Server {
-    private final Provider<Handler> handlerProvider;
+    private final Provider<RouteHandler> handlerProvider;
     private final HashedWheelTimer timer;
     private final GameLoop gameLoop;
     private NioEventLoopGroup parentGroup;
     private NioEventLoopGroup childGroup;
 
     @Inject
-    public Server(Provider<Handler> handlerProvider, HashedWheelTimer timer,
+    public Server(Provider<RouteHandler> handlerProvider, HashedWheelTimer timer,
                   GameLoop gameLoop) {
         this.handlerProvider = handlerProvider;
         this.timer = timer;

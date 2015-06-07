@@ -30,7 +30,7 @@ import mmo.server.model.Player;
 import javax.inject.Inject;
 import java.util.regex.Pattern;
 
-public class Handler extends ChannelInboundHandlerAdapter {
+public class RouteHandler extends ChannelInboundHandlerAdapter {
     private ChannelInboundHandler handler = null;
 
     private final DefaultHandlerFactory defaultHandlerFactory;
@@ -40,9 +40,9 @@ public class Handler extends ChannelInboundHandlerAdapter {
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
 
     @Inject
-    public Handler(DefaultHandlerFactory defaultHandlerFactory,
-                   NotificationHandlerFactory notificationHandlerFactory,
-                   StatusHandlerFactory statusHandlerFactory) {
+    public RouteHandler(DefaultHandlerFactory defaultHandlerFactory,
+                        NotificationHandlerFactory notificationHandlerFactory,
+                        StatusHandlerFactory statusHandlerFactory) {
         this.defaultHandlerFactory = defaultHandlerFactory;
         this.notificationHandlerFactory = notificationHandlerFactory;
         this.statusHandlerFactory = statusHandlerFactory;
