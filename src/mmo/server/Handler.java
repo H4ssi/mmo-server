@@ -28,25 +28,24 @@ import io.netty.util.ReferenceCountUtil;
 import mmo.server.model.Player;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import java.util.regex.Pattern;
 
 public class Handler extends ChannelInboundHandlerAdapter {
     private ChannelInboundHandler handler = null;
 
-    private final Provider<DefaultHandler> defaultHandlerProvider;
+    private final DefaultHandlerFactory defaultHandlerFactory;
     private final NotificationHandlerFactory notificationHandlerFactory;
-    private final Provider<StatusHandler> statusHandlerProvider;
+    private final StatusHandlerFactory statusHandlerFactory;
 
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
 
     @Inject
-    public Handler(Provider<DefaultHandler> defaultHandlerProvider,
+    public Handler(DefaultHandlerFactory defaultHandlerFactory,
                    NotificationHandlerFactory notificationHandlerFactory,
-                   Provider<StatusHandler> statusHandlerProvider) {
-        this.defaultHandlerProvider = defaultHandlerProvider;
+                   StatusHandlerFactory statusHandlerFactory) {
+        this.defaultHandlerFactory = defaultHandlerFactory;
         this.notificationHandlerFactory = notificationHandlerFactory;
-        this.statusHandlerProvider = statusHandlerProvider;
+        this.statusHandlerFactory = statusHandlerFactory;
     }
 
     @Override
@@ -61,10 +60,10 @@ public class Handler extends ChannelInboundHandlerAdapter {
 
             switch (first) {
                 case "":
-                    installHandler(ctx, defaultHandlerProvider.get());
+                    installHandler(ctx, defaultHandlerFactory.create());
                     break;
                 case "status":
-                    installHandler(ctx, statusHandlerProvider.get());
+                    installHandler(ctx, statusHandlerFactory.create());
                     break;
                 case "game":
                     installHandler(

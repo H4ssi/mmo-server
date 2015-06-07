@@ -21,26 +21,21 @@
 package mmo.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.auto.factory.AutoFactory;
+import com.google.auto.factory.Provided;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import io.netty.util.ReferenceCountUtil;
 import mmo.server.data.ServerInfo;
 
-import javax.inject.Inject;
-
+@AutoFactory
 public class StatusHandler extends ChannelInboundHandlerAdapter {
     private final ObjectMapper mapper;
 
-    @Inject
-    public StatusHandler(ObjectMapper mapper) {
+    public StatusHandler(@Provided ObjectMapper mapper) {
         this.mapper = mapper;
     }
 
