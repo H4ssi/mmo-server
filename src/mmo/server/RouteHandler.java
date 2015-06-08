@@ -33,6 +33,7 @@ import io.netty.util.ReferenceCountUtil;
 import mmo.server.model.Player;
 
 import javax.inject.Inject;
+import java.net.URI;
 import java.util.regex.Pattern;
 
 public class RouteHandler extends ChannelInboundHandlerAdapter {
@@ -63,6 +64,9 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
             HttpRequest request = (HttpRequest) msg;
 
             String[] path = PATH_SEP.split(request.getUri(), -1);
+            for (int i = 0; i < path.length; ++i) {
+                path[i] = URI.create(path[i]).getPath();
+            }
 
             String first = path.length == 1 ? "" : path[1];
 
