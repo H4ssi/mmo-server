@@ -58,6 +58,38 @@ The data is JSON formatted, see this sample:
 }
 ```
 
+### Room layout
+
+```
+Get /room/<room id>
+
+e.g.
+
+GET /room/0
+```
+
+Gets the layout of the room. A room is tiled up into `16` times `16` tiles, 
+some of them might be blocked by an obstacle. Thus a player cannot reside on 
+the same tile as an obstacle.
+
+The data is JSON formatted, see this sample
+
+```
+{
+  "id" : 1337,
+  "obstacles" : [
+    {
+      "x" : 5,
+      "y" : 5
+    },
+    {
+      "x" : 6,
+      "y" : 5
+    }
+  ]
+}
+```
+
 ### Notification channel
 
 ```
@@ -194,6 +226,67 @@ are two other players in this room currently:
 
 This message is sent to the client as second message (right after `Entered`) 
 upon entering a room.
+
+#### Starting to move (`Moving`)
+
+Server or client sends
+
+```
+{
+  "type" : ".Moving",
+  "id" : 5,            /* local room id of moving player : optional[int] */
+  "direction" : "LEFT" /* direction of movement : string{LEFT,RIGHT,UP,DOWN} */
+}
+```
+
+This message can be sent to the server by the client, to express their intent
+to move. When sending the message to the server `"id"` should be left empty.
+
+When this message is received from the server, it means that a player (in 
+this case player `5`) started to move in the named direction (in this case 
+`"LEFT"`).
+
+Note that the player does still need to finish the move. This is just an 
+indication that the movement was started. The current position of player are 
+not changed yet.
+
+#### Successful movement (`Move`)
+
+Server sends
+
+```
+{
+  "type" : ".Move",
+  "id" : 5          /* local room id of moving player : int */
+}
+```
+
+Which means, player `5` just completed his previously started move.
+
+If the player moved onto a tile occupied by another player, their positions 
+are exchanged.
+
+Note that the movement is considered to be completed now. The positions of 
+the players are indeed updated.
+
+Note that, if a player walks off of a room, a `Left` message will be sent 
+instead.
+
+#### Failed movement (`Bump`)
+
+Server sends
+```
+{
+  "type" : ".Bump",
+  "id" : 5          /* local room id of moving player : int */
+}
+```
+
+Which means, player `5` started to move, but did not execute it successfully.
+Most likely this is due to an obstacle in the way.
+
+Note that the movement is considered to be completed, but the position of the
+player is still unchanged.
 
 #### Leaving (`Left`)
 
