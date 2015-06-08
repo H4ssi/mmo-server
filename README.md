@@ -250,13 +250,13 @@ Note that the player does still need to finish the move. This is just an
 indication that the movement was started. The current position of player are 
 not changed yet.
 
-#### Successful movement (`Move`)
+#### Successful movement (`Moved`)
 
 Server sends
 
 ```
 {
-  "type" : ".Move",
+  "type" : ".Moved",
   "id" : 5          /* local room id of moving player : int */
 }
 ```
