@@ -22,6 +22,7 @@ package mmo.server;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableSet;
 import mmo.server.model.Coord;
 import mmo.server.model.Direction;
 import mmo.server.model.Player;
@@ -40,7 +41,7 @@ public class Room {
     private final Set<Coord> obstacles;
 
     public Room(Set<Coord> obstacles) {
-        this.obstacles = obstacles;
+        this.obstacles = ImmutableSet.copyOf(obstacles);
     }
 
     public Coord findFreeNear(Coord preferred) {
@@ -136,5 +137,9 @@ public class Room {
             contents.forcePut(current, other);
             return true;
         }
+    }
+
+    public Set<Coord> getObstacles() {
+        return obstacles;
     }
 }

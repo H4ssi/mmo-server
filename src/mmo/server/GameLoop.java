@@ -24,6 +24,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.Iterables;
 import com.google.common.math.IntMath;
 import io.netty.util.HashedWheelTimer;
@@ -59,8 +60,8 @@ public class GameLoop {
             new DefaultEventExecutorGroup(1);
     private final MessageHub messageHub;
 
-    private BiMap<Room, Integer> roomIds = HashBiMap.create();
-    private BiMap<Room, Coord> roomCoords = HashBiMap.create();
+    private BiMap<Room, Integer> roomIds;
+    private BiMap<Room, Coord> roomCoords;
 
     private final HashedWheelTimer timer;
 
@@ -77,6 +78,9 @@ public class GameLoop {
     public GameLoop(MessageHub messageHub, HashedWheelTimer timer) {
         this.messageHub = messageHub;
         this.timer = timer;
+
+        BiMap<Room, Integer> roomIds = HashBiMap.create();
+        BiMap<Room, Coord> roomCoords = HashBiMap.create();
 
         Random r = new Random();
         for (int x = -1; x <= 1; ++x) {
@@ -121,6 +125,9 @@ public class GameLoop {
                 roomCoords.put(room, new Coord(x, y));
             }
         }
+
+        this.roomIds = ImmutableBiMap.copyOf(roomIds);
+        this.roomCoords = ImmutableBiMap.copyOf(roomCoords);
     }
 
     public void login(final Player entering) {
@@ -292,5 +299,10 @@ public class GameLoop {
                 }
             }
         });
+    }
+
+
+    public Room getRoom(int roomId) {
+        return roomIds.inverse().get(roomId);
     }
 }

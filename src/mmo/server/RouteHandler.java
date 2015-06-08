@@ -23,7 +23,12 @@ package mmo.server;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCountUtil;
 import mmo.server.model.Player;
 
@@ -36,16 +41,19 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
     private final DefaultHandlerFactory defaultHandlerFactory;
     private final NotificationHandlerFactory notificationHandlerFactory;
     private final StatusHandlerFactory statusHandlerFactory;
+    private final RoomHandlerFactory roomHandlerFactory;
 
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
 
     @Inject
     public RouteHandler(DefaultHandlerFactory defaultHandlerFactory,
                         NotificationHandlerFactory notificationHandlerFactory,
-                        StatusHandlerFactory statusHandlerFactory) {
+                        StatusHandlerFactory statusHandlerFactory,
+                        RoomHandlerFactory roomHandlerFactory) {
         this.defaultHandlerFactory = defaultHandlerFactory;
         this.notificationHandlerFactory = notificationHandlerFactory;
         this.statusHandlerFactory = statusHandlerFactory;
+        this.roomHandlerFactory = roomHandlerFactory;
     }
 
     @Override
@@ -73,6 +81,19 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
                                             path.length >= 3
                                                     ? path[2]
                                                     : "anonymous")));
+                    break;
+                case "room":
+                    int roomId;
+                    if (path.length < 3) {
+                        roomId = 0;
+                    } else {
+                        try {
+                            roomId = Integer.parseInt(path[2]);
+                        } catch (NumberFormatException e) {
+                            roomId = 0;
+                        }
+                    }
+                    installHandler(ctx, roomHandlerFactory.create(roomId));
                     break;
                 default:
                     installHandler(ctx, null);
