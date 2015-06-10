@@ -22,11 +22,13 @@ package mmo.server.data;
 
 import mmo.server.model.Coord;
 
+import java.util.Collection;
+
 public class RoomInfo {
     private int id;
-    private Coord[] obstacles;
+    private Collection<Coord> obstacles;
 
-    public RoomInfo(int id, Coord[] obstacles) {
+    public RoomInfo(int id, Collection<Coord> obstacles) {
         this.id = id;
         this.obstacles = obstacles;
     }
@@ -39,11 +41,11 @@ public class RoomInfo {
         this.id = id;
     }
 
-    public Coord[] getObstacles() {
+    public Collection<Coord> getObstacles() {
         return obstacles;
     }
 
-    public void setObstacles(Coord[] obstacles) {
+    public void setObstacles(Collection<Coord> obstacles) {
         this.obstacles = obstacles;
     }
 }

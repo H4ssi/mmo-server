@@ -23,7 +23,6 @@ package mmo.server;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.factory.AutoFactory;
 import com.google.auto.factory.Provided;
-import com.google.common.collect.Iterables;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -36,7 +35,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.ReferenceCountUtil;
 import mmo.server.data.RoomInfo;
-import mmo.server.model.Coord;
 
 @AutoFactory
 public class RoomHandler extends ChannelInboundHandlerAdapter {
@@ -58,8 +56,7 @@ public class RoomHandler extends ChannelInboundHandlerAdapter {
         try {
             if (msg instanceof HttpRequest) {
                 RoomInfo roomInfo = new RoomInfo(roomId,
-                        Iterables.toArray(gameLoop.getRoom(roomId)
-                                .getObstacles(), Coord.class));
+                        gameLoop.getRoom(roomId).getObstacles());
 
                 ByteBuf buf = Unpooled.wrappedBuffer(
                         mapper.writeValueAsBytes(roomInfo));

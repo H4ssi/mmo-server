@@ -23,9 +23,9 @@ package mmo.server;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.BiMap;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.Iterables;
 import com.google.common.math.IntMath;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
@@ -47,6 +47,7 @@ import mmo.server.model.PlayerInRoom;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
@@ -161,7 +162,7 @@ public class GameLoop {
                 room.contents(),
                 new Entered(enteringPlayerInRoom));
 
-        Iterable<Player> others = Iterables.filter(
+        Collection<Player> others = Collections2.filter(
                 room.contents(),
                 new Predicate<Player>() {
                     @Override
@@ -170,21 +171,18 @@ public class GameLoop {
                     }
                 }
         );
-        Iterable<PlayerInRoom> othresInRoom = Iterables.transform(
-                others, new Function<Player, PlayerInRoom>() {
+        Collection<PlayerInRoom> othersInRoom = Collections2.transform(
+                others,
+                new Function<Player, PlayerInRoom>() {
                     @Override
                     public PlayerInRoom apply(Player input) {
-                        return new PlayerInRoom(room
-                                .getId(input),
+                        return new PlayerInRoom(room.getId(input),
                                 input,
                                 room.getCoord(input));
                     }
                 }
         );
-        messageHub.sendMessage(
-                entering,
-                new InRoom(roomId, Iterables.toArray(
-                        othresInRoom, PlayerInRoom.class)));
+        messageHub.sendMessage(entering, new InRoom(roomId, othersInRoom));
     }
 
     public void logout(final Player leaving) {

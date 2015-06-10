@@ -22,14 +22,16 @@ package mmo.server.message;
 
 import mmo.server.model.PlayerInRoom;
 
+import java.util.Collection;
+
 public class InRoom implements Message {
     private int room;
-    private PlayerInRoom[] players;
+    private Collection<PlayerInRoom> players;
 
     public InRoom() {
     }
 
-    public InRoom(int room, PlayerInRoom[] players) {
+    public InRoom(int room, Collection<PlayerInRoom> players) {
         this.room = room;
         this.players = players;
     }
@@ -42,11 +44,11 @@ public class InRoom implements Message {
         this.room = room;
     }
 
-    public PlayerInRoom[] getCoords() {
+    public Collection<PlayerInRoom> getCoords() {
         return players;
     }
 
-    public void setCoords(PlayerInRoom[] coords) {
+    public void setCoords(Collection<PlayerInRoom> coords) {
         this.players = coords;
     }
 }
