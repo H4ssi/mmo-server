@@ -22,11 +22,13 @@ package mmo.server;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import dagger.Module;
 import dagger.Provides;
 import io.netty.util.HashedWheelTimer;
+import mmo.server.message.Message;
 
 import javax.inject.Singleton;
 
@@ -45,8 +47,19 @@ public class ServerModule {
         return new ObjectMapper()
                 .setDefaultTyping(
                         new ObjectMapper.DefaultTypeResolverBuilder(
-                                ObjectMapper.DefaultTyping
-                                        .OBJECT_AND_NON_CONCRETE)
+                                ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT) {
+                            @Override
+                            public boolean useForType(JavaType t) {
+                                Class<?> clazz = t.getRawClass();
+                                if (clazz == null) {
+                                    return super.useForType(t);
+                                } else {
+                                    return Message.class
+                                            .isAssignableFrom(clazz);
+                                }
+
+                            }
+                        }
                                 .init(
                                         JsonTypeInfo.Id.MINIMAL_CLASS,
                                         null)
