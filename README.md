@@ -161,7 +161,7 @@ Server or client sends
 }
 ```
 
-which means
+meaning
 
 * a client wants to send a chat message to the room (when the message is sent
   from the client to the server)
@@ -190,7 +190,7 @@ Server sends
 }
 ```
 
-which means, a player named `"florian"` entered the room and was placed on tile 
+meaning, a player named `"florian"` entered the room and was placed on tile 
 `[7/8]`. As long as the player stays in this room, they will be identified by 
 the id  `1`.
  
@@ -224,7 +224,7 @@ Server sends
 }
 ```
 
-which means currently the player is in room `1337`. Besides the player, there 
+meaning, currently the player is in room `1337`. Besides the player, there 
 are two other players in this room currently:
 
 * Player `"bert"` with local room id `0` on tile `[8/8]`
@@ -250,7 +250,7 @@ Server or client sends
 ```
 
 This message can be sent to the server by the client, to express their intent
-to move. When sending the message to the server `"id"` should be left empty.
+to move. When sending the message to the server, `"id"` should be left empty.
 
 When this message is received from the server, it means that a player (in 
 this case player `5`) started to move in the named direction (in this case 
@@ -271,7 +271,7 @@ Server sends
 }
 ```
 
-Which means, player `5` just completed his previously started move.
+meaning, player `5` just completed his previously started move.
 
 If the player moved onto a tile occupied by another player, their positions 
 are exchanged.
@@ -285,6 +285,7 @@ instead.
 #### Failed movement (`Bump`)
 
 Server sends
+
 ```
 {
   "type" : ".Bump",
@@ -292,11 +293,64 @@ Server sends
 }
 ```
 
-Which means, player `5` started to move, but did not execute it successfully.
+meaning, player `5` started to move, but did not execute it successfully.
 Most likely this is due to an obstacle in the way.
 
 Note that the movement is considered to be completed, but the position of the
 player is still unchanged.
+
+#### Starting an attack ('Attacking')
+
+Server or client sends
+
+```
+{
+  "type" : ".Attacking",
+  "direction" : "LEFT", /* direction of attack : string{LEFT,RIGHT,UP,DOWN} */
+  "id" : 5              /* local room id of attacking player : optional[int] */
+}
+```
+
+This message can be sent to the server by the client, to express their intent
+to attack. When sending the message to the server, `"id"` should be left empty.
+
+When this message is received from the server, it means that a player (in 
+this case player `5`) started to attack in the named direction (in this case 
+`"LEFT"`).
+
+Attacks always target (a unit occupying) an adjacent field.
+
+Note that the player does still need to finish the attack. This is just an 
+indication that the attack was started. No damage is dealt so far.
+
+#### Successful attack (`Hit`)
+
+Server sends
+
+```
+{
+  "type" : ".Hit",
+  "id" : 5,        /* local room id of attacking player : int */
+  "damage" : 1     /* damage dealt : int */
+}
+```
+
+meaning, player `5` successfully landed the previously initiated attack. 
+`1` damage was dealt to the target.
+
+#### Failed attack (`Miss`)
+
+Server sends
+
+```
+{
+  "type" : ".Miss",
+  "id" : 5          /* local room id of attacking player : int */
+}
+```
+
+meaning, player `5` missed the previously initiated attack. No damage is 
+dealt.
 
 #### Leaving (`Left`)
 
@@ -309,7 +363,7 @@ Server sends
 }
 ```
 
-which means, the player with local room id `0` just left the room. Upon 
+meaning, the player with local room id `0` just left the room. Upon 
 leaving a room, this is the last message, that is still relevant for this room.
 
 ## License

@@ -39,8 +39,10 @@ import mmo.server.message.Bump;
 import mmo.server.message.CannotEnter;
 import mmo.server.message.Chat;
 import mmo.server.message.Entered;
+import mmo.server.message.Hit;
 import mmo.server.message.InRoom;
 import mmo.server.message.Left;
+import mmo.server.message.Miss;
 import mmo.server.message.Moved;
 import mmo.server.message.Moving;
 import mmo.server.model.Coord;
@@ -62,6 +64,7 @@ import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class GameLoop {
+    public static final int ACTION_DELAY_MILLIS = 66;
     private final DefaultEventExecutorGroup loop =
             new DefaultEventExecutorGroup(1);
     private final MessageHub messageHub;
@@ -288,7 +291,7 @@ public class GameLoop {
             public void run(Timeout timeout) throws Exception {
                 move(player, dir);
             }
-        }, 66, TimeUnit.MILLISECONDS);
+        }, ACTION_DELAY_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     private void move(final Player player, final Direction dir) {
@@ -346,7 +349,7 @@ public class GameLoop {
                 default:
                     throw new IllegalStateException("unknown action in queue");
             }
-
+            s.action = s.queuedAction;
             s.queuedAction = null;
             s.queuedDirection = null;
         }
@@ -376,12 +379,42 @@ public class GameLoop {
                 room.contents(),
                 new Attacking(room.getId(player), dir)
         );
-/*        timer.newTimeout(new TimerTask() {
+        timer.newTimeout(new TimerTask() {
             @Override
             public void run(Timeout timeout) throws Exception {
-                move(player, dir);
+                attack(player, dir);
             }
-        }, 66, TimeUnit.MILLISECONDS);*/
+        }, ACTION_DELAY_MILLIS * 3 / 2, TimeUnit.MILLISECONDS);
+    }
+
+    private void attack(final Player player, final Direction dir) {
+        loop.submit(new Runnable() {
+            @Override
+            public void run() {
+                PlayerState s = players.get(player);
+                Room room = roomIds.inverse().get(s.currentRoom);
+
+                Coord target = room.getCoord(player).toThe(dir);
+                if (!room.isCoordInRoom(target)) {
+                    messageHub.sendMessage(
+                            room.contents(),
+                            new Miss(room.getId(player)));
+                } else {
+                    Player p = room.playerAt(target);
+                    if (p instanceof Mob) {
+                        messageHub.sendMessage(
+                                room.contents(),
+                                new Hit(room.getId(player), 1));
+                    } else {
+                        messageHub.sendMessage(
+                                room.contents(),
+                                new Miss(room.getId(player)));
+                    }
+                }
+
+                workQueue(s, room, player);
+            }
+        });
     }
 
     public Room getRoom(int roomId) {
