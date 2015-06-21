@@ -48,11 +48,19 @@ public class Room {
         this.spawnPoints = ImmutableSet.copyOf(spawnPoints);
 
         for (SpawnPoint p : spawnPoints) {
-            SpawnedMob mob = new SpawnedMob("mob", p);
-            int id = nextId();
+            spawnMob(p);
+        }
+    }
 
+    private void spawnMob(SpawnPoint p) {
+        SpawnedMob mob = new SpawnedMob("mob", p);
+
+        Coord coord = findFreeNear(p.getCoord());
+
+        if (coord != null) {
+            int id = nextId();
             ids.put(id, mob);
-            contents.put(p.getCoord(), mob);
+            contents.put(coord, mob);
         }
     }
 
