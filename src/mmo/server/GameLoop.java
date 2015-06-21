@@ -45,6 +45,7 @@ import mmo.server.message.Left;
 import mmo.server.message.Miss;
 import mmo.server.message.Moved;
 import mmo.server.message.Moving;
+import mmo.server.message.Pwnd;
 import mmo.server.model.Coord;
 import mmo.server.model.Direction;
 import mmo.server.model.Mob;
@@ -405,6 +406,12 @@ public class GameLoop {
                         messageHub.sendMessage(
                                 room.contents(),
                                 new Hit(room.getId(player), 1));
+                        int mobId = room.getId(p);
+                        room.pwn((Mob) p);
+                        messageHub.sendMessage(
+                                room.contents(),
+                                new Pwnd(mobId)
+                        );
                     } else {
                         messageHub.sendMessage(
                                 room.contents(),

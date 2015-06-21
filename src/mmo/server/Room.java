@@ -165,6 +165,12 @@ public class Room {
         return obstacles;
     }
 
+    public void pwn(Mob p) {
+        int id = ids.inverse().remove(p);
+        usedIds.clear(id);
+        contents.inverse().remove(p);
+    }
+
     private static class SpawnedMob extends Mob {
         private final SpawnPoint point;
 
