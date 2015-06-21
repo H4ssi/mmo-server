@@ -152,6 +152,8 @@ public class Room {
         if (other == null) {
             contents.forcePut(target, player);
             return true;
+        } else if (other instanceof Mob) {
+            return false; // bump into mob
         } else {
             contents.forcePut(target, player);
             contents.forcePut(current, other);
