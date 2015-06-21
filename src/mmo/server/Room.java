@@ -53,7 +53,7 @@ public class Room {
     }
 
     public Mob spawnMob(SpawnPoint p) {
-        SpawnedMob mob = new SpawnedMob("mob", p);
+        SpawnedMob mob = new SpawnedMob(GameLoop.generateName(), p);
 
         Coord coord = findFreeNear(p.getCoord());
 

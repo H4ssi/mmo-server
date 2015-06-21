@@ -458,4 +458,59 @@ public class GameLoop {
     private enum Action {
         MOVE, ATTACK,
     }
+
+    private static final String[] vocalStarters = new String[]{
+            "a", "e", "i", "o", "u", "au", "ai", "eu"};
+    private static final String[] vocals = new String[]{
+            "aa", "ao", "ee", "ei", "eo", "ie", "ii", "io", "iu", "oo", "uu"};
+    private static final String[] starters = new String[]{
+            "b", "br", "bl", "ch", "d", "dr", "dl", "f", "fl", "g", "gr", "gl",
+            "h", "j", "k", "kl", "kr", "l", "m", "n", "p", "pl", "qu", "r", "s",
+            "sh", "sk", "sl", "sm", "sp", "sr", "st", "t", "tl", "v", "vr",
+            "w", "wr", "x", "z", "zr"};
+    private static final String[] fillers = new String[]{"bb", "bs", "ck",
+            "ds", "dt", "ff", "fs", "ft", "gg", "gs", "gt", "ks", "kt", "ll",
+            "lk", "lr", "ls", "lt", "mm", "mp", "mb", "ms", "mt", "nn", "ns",
+            "nt", "pp", "rk", "rr", "ss", "tt", "wt", "zz"};
+
+    private static String r(String[] rs) {
+        return rs[(int) (Math.random() * rs.length)];
+    }
+
+    private static String r(String[] rs1, String[] rs2) {
+        int s = (int) (Math.random() * (rs1.length + rs2.length));
+
+        if (s < rs1.length) {
+            return rs1[s];
+        } else {
+            return rs2[s % rs1.length];
+        }
+    }
+
+    public static String generateName() {
+        int vs = (int) (Math.random() * 2) + 1;
+
+        StringBuilder b = new StringBuilder();
+
+        if (Math.random() > 0.5) {
+            b.append(r(vocalStarters));
+            if (vs == 1) {
+                b.append(r(starters, fillers));
+            }
+        } else {
+            b.append(r(starters));
+            b.append(r(vocalStarters, vocals));
+        }
+
+        for (int v = 1; v < vs; v++) {
+            b.append(r(starters, fillers));
+            b.append(r(vocalStarters, vocals));
+        }
+
+        if (Math.random() > 0.5) {
+            b.append(r(starters, fillers));
+        }
+
+        return b.toString();
+    }
 }
