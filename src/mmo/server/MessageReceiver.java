@@ -30,6 +30,7 @@ import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
+import mmo.server.message.Attacking;
 import mmo.server.message.Chat;
 import mmo.server.message.Message;
 import mmo.server.message.Moving;
@@ -86,6 +87,10 @@ public class MessageReceiver {
             Direction dir = ((Moving) m).getDirection();
 
             gameLoop.moving(player, dir);
+        } else if (m instanceof Attacking) {
+            Direction dir = ((Attacking) m).getDirection();
+
+            gameLoop.attacking(player, dir);
         } else if (m instanceof Chat) {
             String orig = ((Chat) m).getMessage();
             if (orig != null && !orig.trim().isEmpty()) {

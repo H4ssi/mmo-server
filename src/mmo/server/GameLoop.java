@@ -34,6 +34,7 @@ import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.Future;
+import mmo.server.message.Attacking;
 import mmo.server.message.Bump;
 import mmo.server.message.CannotEnter;
 import mmo.server.message.Chat;
@@ -72,8 +73,9 @@ public class GameLoop {
 
     private static class PlayerState {
         private Integer currentRoom = null;
-        private boolean isMoving = false;
-        private Direction queuedMoving = null;
+        private Action action = null;
+        private Action queuedAction = null;
+        private Direction queuedDirection = null;
     }
 
     private ConcurrentMap<Player, PlayerState> players =
@@ -263,11 +265,12 @@ public class GameLoop {
             public void run() {
                 PlayerState s = players.get(player);
                 Room room = roomIds.inverse().get(s.currentRoom);
-                if (!s.isMoving) {
+                if (s.action == null) {
                     movingNow(room, player, dir);
-                    s.isMoving = true;
+                    s.action = Action.MOVE;
                 } else {
-                    s.queuedMoving = dir;
+                    s.queuedAction = Action.MOVE;
+                    s.queuedDirection = dir;
                 }
             }
         });
@@ -324,18 +327,68 @@ public class GameLoop {
                             new Bump(room.getId(player)));
                 }
 
-                if (s.queuedMoving == null) {
-                    s.isMoving = false;
+                workQueue(s, room, player);
+            }
+        });
+    }
+
+    private void workQueue(PlayerState s, Room room, Player player) {
+        if (s.queuedAction == null) {
+            s.action = null;
+        } else {
+            switch (s.queuedAction) {
+                case MOVE:
+                    movingNow(room, player, s.queuedDirection);
+                    break;
+                case ATTACK:
+                    attackingNow(room, player, s.queuedDirection);
+                    break;
+                default:
+                    throw new IllegalStateException("unknown action in queue");
+            }
+
+            s.queuedAction = null;
+            s.queuedDirection = null;
+        }
+    }
+
+    public void attacking(final Player player, final Direction dir) {
+        loop.submit(new Runnable() {
+            @Override
+            public void run() {
+                PlayerState s = players.get(player);
+                Room room = roomIds.inverse().get(s.currentRoom);
+                if (s.action == null) {
+                    attackingNow(room, player, dir);
+                    s.action = Action.ATTACK;
                 } else {
-                    movingNow(room, player, s.queuedMoving);
-                    s.queuedMoving = null;
+                    s.queuedAction = Action.ATTACK;
+                    s.queuedDirection = dir;
                 }
             }
         });
     }
 
+    private void attackingNow(final Room room,
+                              final Player player,
+                              final Direction dir) {
+        messageHub.sendMessage(
+                room.contents(),
+                new Attacking(room.getId(player), dir)
+        );
+/*        timer.newTimeout(new TimerTask() {
+            @Override
+            public void run(Timeout timeout) throws Exception {
+                move(player, dir);
+            }
+        }, 66, TimeUnit.MILLISECONDS);*/
+    }
 
     public Room getRoom(int roomId) {
         return roomIds.inverse().get(roomId);
+    }
+
+    private enum Action {
+        MOVE, ATTACK,
     }
 }
