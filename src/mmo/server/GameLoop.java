@@ -22,10 +22,12 @@ package mmo.server;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.Sets;
 import com.google.common.math.IntMath;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
@@ -42,8 +44,10 @@ import mmo.server.message.Moved;
 import mmo.server.message.Moving;
 import mmo.server.model.Coord;
 import mmo.server.model.Direction;
+import mmo.server.model.Mob;
 import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
+import mmo.server.model.SpawnPoint;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -121,7 +125,29 @@ public class GameLoop {
                     }
                 }
 
-                Room room = new Room(obstacles);
+                int numMobs = Math.abs(x) + Math.abs(y) + 1;
+                Set<SpawnPoint> spawnPoints = new HashSet<>();
+                Set<Coord> spawnCoords = new HashSet<>();
+
+                while (spawnPoints.size() < numMobs) {
+                    int mx = r.nextInt(Room.SIZE);
+                    int my = r.nextInt(Room.SIZE);
+
+                    Coord mspawn = new Coord(mx, my);
+
+                    if (obstacles.contains(mspawn)) {
+                        continue;
+                    }
+                    if (spawnCoords.contains(mspawn)) {
+                        continue;
+                    }
+
+                    spawnPoints.add(
+                            new SpawnPoint(mspawn, r.nextInt(5000) + 5000));
+                    spawnCoords.add(mspawn);
+                }
+
+                Room room = new Room(obstacles, spawnPoints);
                 roomIds.put(room, id);
                 roomCoords.put(room, new Coord(x, y));
             }
@@ -162,17 +188,7 @@ public class GameLoop {
                 room.contents(),
                 new Entered(enteringPlayerInRoom));
 
-        Collection<Player> others = Collections2.filter(
-                room.contents(),
-                new Predicate<Player>() {
-                    @Override
-                    public boolean apply(Player input) {
-                        return input != entering;
-                    }
-                }
-        );
-        Collection<PlayerInRoom> othersInRoom = Collections2.transform(
-                others,
+        Function<Player, PlayerInRoom> transformToInRoom =
                 new Function<Player, PlayerInRoom>() {
                     @Override
                     public PlayerInRoom apply(Player input) {
@@ -180,9 +196,28 @@ public class GameLoop {
                                 input,
                                 room.getCoord(input));
                     }
-                }
-        );
-        messageHub.sendMessage(entering, new InRoom(roomId, othersInRoom));
+                };
+
+        Set<Player> others = Sets.filter(
+                room.contents(),
+                new Predicate<Player>() {
+                    @Override
+                    public boolean apply(Player input) {
+                        return input != entering && !(input instanceof Mob);
+                    }
+                });
+        Collection<PlayerInRoom> othersInRoom = Collections2.transform(
+                others, transformToInRoom);
+
+        Collection<Player> mobs = Sets.filter(
+                room.contents(),
+                Predicates.instanceOf(Mob.class));
+        Collection<PlayerInRoom> mobsInRoom = Collections2.transform(
+                mobs, transformToInRoom);
+
+        messageHub.sendMessage(
+                entering,
+                new InRoom(roomId, othersInRoom, mobsInRoom));
     }
 
     public void logout(final Player leaving) {

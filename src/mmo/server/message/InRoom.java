@@ -27,13 +27,16 @@ import java.util.Collection;
 public class InRoom implements Message {
     private int room;
     private Collection<PlayerInRoom> players;
+    private Collection<PlayerInRoom> mobs;
 
     public InRoom() {
     }
 
-    public InRoom(int room, Collection<PlayerInRoom> players) {
+    public InRoom(int room, Collection<PlayerInRoom> players, Collection
+            <PlayerInRoom> mobs) {
         this.room = room;
         this.players = players;
+        this.mobs = mobs;
     }
 
     public int getRoom() {
@@ -50,5 +53,13 @@ public class InRoom implements Message {
 
     public void setCoords(Collection<PlayerInRoom> coords) {
         this.players = coords;
+    }
+
+    public Collection<PlayerInRoom> getMobs() {
+        return mobs;
+    }
+
+    public void setMobs(Collection<PlayerInRoom> mobs) {
+        this.mobs = mobs;
     }
 }

@@ -207,13 +207,19 @@ Server sends
   "coords" : [ {    /* list of players currently in this room : array */
     "id" : 0,       /* player room id : int */
     "x" : 8,        /* player x coordinate : int */
-    "y" : 8         /* player y coordinate : int */
+    "y" : 8,        /* player y coordinate : int */
     "name" : "bert" /* player name : string */
   }, {
     "id" : 2,
     "x" : 7,
-    "y" : 8
+    "y" : 8,
     "name" : "ernie"
+  } ],
+  "mobs" : [ {      /* list of mobs currently in this room : array */
+    "id" : 1,       /* same fields as coords/players above */
+    "x" : 9,
+    "y" : 3,
+    "name" : "bad guy"
   } ]
 }
 ```
@@ -223,6 +229,10 @@ are two other players in this room currently:
 
 * Player `"bert"` with local room id `0` on tile `[8/8]`
 * Player `"ernie"` with local room id `2` on tile `[7/8]`
+
+Besides all these players, there is one mob in this room:
+
+* Mob `"bad guy"` with local room id `1` on tile `[9/3]`
 
 This message is sent to the client as second message (right after `Entered`) 
 upon entering a room.

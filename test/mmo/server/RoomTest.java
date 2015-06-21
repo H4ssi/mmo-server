@@ -22,6 +22,7 @@ package mmo.server;
 
 import mmo.server.model.Coord;
 import mmo.server.model.Player;
+import mmo.server.model.SpawnPoint;
 import org.testng.annotations.Test;
 
 import java.util.Collections;
@@ -36,7 +37,7 @@ public class RoomTest {
 
     @Test
     public void enterEmptyRoom() {
-        Room room = new Room(Collections.<Coord>emptySet());
+        Room room = createEmptyRoom();
 
         Player pl = createDummyPlayer();
         assertThat("empty room can be entered",
@@ -50,9 +51,15 @@ public class RoomTest {
                 room.contents(), hasItem(pl));
     }
 
+    private static Room createEmptyRoom() {
+        return new Room(
+                Collections.<Coord>emptySet(),
+                Collections.<SpawnPoint>emptySet());
+    }
+
     @Test
     public void enterRoomAndGetDisplaced() {
-        Room room = new Room(Collections.<Coord>emptySet());
+        Room room = createEmptyRoom();
 
         room.enter(new Coord(0, 0), createDummyPlayer());
 
@@ -67,7 +74,7 @@ public class RoomTest {
 
     @Test
     public void useConsecutiveIds() {
-        Room room = new Room(Collections.<Coord>emptySet());
+        Room room = createEmptyRoom();
 
         assertThat("first player gets id 0",
                 room.enter(new Coord(0, 0), createDummyPlayer()).getId(),
@@ -92,7 +99,7 @@ public class RoomTest {
 
     @Test
     public void enterFullRoom() {
-        Room room = new Room(Collections.<Coord>emptySet());
+        Room room = createEmptyRoom();
 
         for (int i = 0; i < Room.SIZE * Room.SIZE; ++i) {
             room.enter(new Coord(0, 0), createDummyPlayer());

@@ -25,8 +25,10 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableSet;
 import mmo.server.model.Coord;
 import mmo.server.model.Direction;
+import mmo.server.model.Mob;
 import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
+import mmo.server.model.SpawnPoint;
 
 import java.util.BitSet;
 import java.util.Collections;
@@ -39,9 +41,19 @@ public class Room {
     private final BiMap<Coord, Player> contents = HashBiMap.create();
     private final BitSet usedIds = new BitSet(SIZE * SIZE);
     private final Set<Coord> obstacles;
+    private final Set<SpawnPoint> spawnPoints;
 
-    public Room(Set<Coord> obstacles) {
+    public Room(Set<Coord> obstacles, Set<SpawnPoint> spawnPoints) {
         this.obstacles = ImmutableSet.copyOf(obstacles);
+        this.spawnPoints = ImmutableSet.copyOf(spawnPoints);
+
+        for (SpawnPoint p : spawnPoints) {
+            SpawnedMob mob = new SpawnedMob("mob", p);
+            int id = nextId();
+
+            ids.put(id, mob);
+            contents.put(p.getCoord(), mob);
+        }
     }
 
     public Coord findFreeNear(Coord preferred) {
@@ -141,5 +153,14 @@ public class Room {
 
     public Set<Coord> getObstacles() {
         return obstacles;
+    }
+
+    private static class SpawnedMob extends Mob {
+        private final SpawnPoint point;
+
+        private SpawnedMob(String name, SpawnPoint point) {
+            super(name);
+            this.point = point;
+        }
     }
 }
