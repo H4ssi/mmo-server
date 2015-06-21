@@ -319,7 +319,7 @@ room id is `3`.
 Mobs are considered to be enemies, and can be attacked and defeated by the 
 players.
 
-#### Starting an attack ('Attacking')
+#### Starting an attack (`Attacking`)
 
 Server or client sends
 
