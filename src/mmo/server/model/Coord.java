@@ -56,7 +56,7 @@ public class Coord {
             case RIGHT:
                 return new Coord(x + 1, y);
             default:
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException("dir must not be valid");
         }
     }
 

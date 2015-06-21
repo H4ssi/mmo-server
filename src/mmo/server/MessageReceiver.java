@@ -86,11 +86,15 @@ public class MessageReceiver {
         if (m instanceof Moving) {
             Direction dir = ((Moving) m).getDirection();
 
-            gameLoop.moving(player, dir);
+            if (dir != null) {
+                gameLoop.moving(player, dir);
+            }
         } else if (m instanceof Attacking) {
             Direction dir = ((Attacking) m).getDirection();
 
-            gameLoop.attacking(player, dir);
+            if (dir != null) {
+                gameLoop.attacking(player, dir);
+            }
         } else if (m instanceof Chat) {
             String orig = ((Chat) m).getMessage();
             if (orig != null && !orig.trim().isEmpty()) {
