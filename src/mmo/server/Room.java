@@ -52,16 +52,20 @@ public class Room {
         }
     }
 
-    private void spawnMob(SpawnPoint p) {
+    public Mob spawnMob(SpawnPoint p) {
         SpawnedMob mob = new SpawnedMob("mob", p);
 
         Coord coord = findFreeNear(p.getCoord());
 
-        if (coord != null) {
-            int id = nextId();
-            ids.put(id, mob);
-            contents.put(coord, mob);
+        if (coord == null) {
+            return null;
         }
+
+        int id = nextId();
+        ids.put(id, mob);
+        contents.put(coord, mob);
+
+        return mob;
     }
 
     public Coord findFreeNear(Coord preferred) {
@@ -165,10 +169,11 @@ public class Room {
         return obstacles;
     }
 
-    public void pwn(Mob p) {
+    public SpawnPoint pwn(Mob p) {
         int id = ids.inverse().remove(p);
         usedIds.clear(id);
         contents.inverse().remove(p);
+        return ((SpawnedMob) p).point;
     }
 
     private static class SpawnedMob extends Mob {

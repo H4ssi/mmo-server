@@ -46,6 +46,7 @@ import mmo.server.message.Miss;
 import mmo.server.message.Moved;
 import mmo.server.message.Moving;
 import mmo.server.message.Pwnd;
+import mmo.server.message.Spawned;
 import mmo.server.model.Coord;
 import mmo.server.model.Direction;
 import mmo.server.model.Mob;
@@ -393,7 +394,7 @@ public class GameLoop {
             @Override
             public void run() {
                 PlayerState s = players.get(player);
-                Room room = roomIds.inverse().get(s.currentRoom);
+                final Room room = roomIds.inverse().get(s.currentRoom);
 
                 Coord target = room.getCoord(player).toThe(dir);
                 if (!room.isCoordInRoom(target)) {
@@ -407,10 +408,36 @@ public class GameLoop {
                                 room.contents(),
                                 new Hit(room.getId(player), 1));
                         int mobId = room.getId(p);
-                        room.pwn((Mob) p);
+                        final SpawnPoint spawn = room.pwn((Mob) p);
                         messageHub.sendMessage(
                                 room.contents(),
                                 new Pwnd(mobId)
+                        );
+                        timer.newTimeout(
+                                new TimerTask() {
+                                    @Override
+                                    public void run(Timeout timeout)
+                                            throws Exception {
+                                        loop.submit(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                Mob m = room.spawnMob(spawn);
+                                                // TODO m == null?
+                                                Spawned spawned = new Spawned(
+                                                        new PlayerInRoom(
+                                                                room.getId(m),
+                                                                m,
+                                                                room.getCoord(m)
+                                                        ));
+                                                messageHub.sendMessage(
+                                                        room.contents(),
+                                                        spawned);
+                                            }
+                                        });
+                                    }
+                                },
+                                spawn.getIntervalMillis(),
+                                TimeUnit.MILLISECONDS
                         );
                     } else {
                         messageHub.sendMessage(

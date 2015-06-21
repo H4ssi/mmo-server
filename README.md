@@ -299,6 +299,26 @@ Most likely this is due to an obstacle in the way.
 Note that the movement is considered to be completed, but the position of the
 player is still unchanged.
 
+#### Mob spawned (`Spawned`)
+
+Server sends
+
+```
+{
+  "type" : ".Spawned",
+  "id" : 3,
+  "name" : "bad guy",
+  "x" : 4,
+  "y" : 2
+}
+```
+
+meaning, a mob named `"bad guy"` just spawned on position `[4/2]`; its local 
+room id is `3`.
+
+Mobs are considered to be enemies, and can be attacked and defeated by the 
+players.
+
 #### Starting an attack ('Attacking')
 
 Server or client sends
@@ -351,6 +371,20 @@ Server sends
 
 meaning, player `5` missed the previously initiated attack. No damage is 
 dealt.
+
+#### Mob defeated (`Pwnd`)
+
+Server sends
+
+```
+{
+  "type" : ".Pwnd",
+  "id" : 3
+}
+```
+
+meaning, the mob with local room id `3` was defeated. It is no longer 
+participating in the game.
 
 #### Leaving (`Left`)
 
