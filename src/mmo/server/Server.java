@@ -27,25 +27,31 @@ import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
+import mmo.server.model.Player;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 public class Server {
-    private final Provider<RouteHandler> handlerProvider;
+    private final Provider<RouteHandler> routeHandlerProvider;
+    private final WebSocketNotificationHandlerFactory webSocketNotificationHandlerProvider;
     private final HashedWheelTimer timer;
     private final GameLoop gameLoop;
     private NioEventLoopGroup parentGroup;
     private NioEventLoopGroup childGroup;
 
     @Inject
-    public Server(Provider<RouteHandler> handlerProvider, HashedWheelTimer
+    public Server(Provider<RouteHandler> handlerProvider, WebSocketNotificationHandlerFactory webSocketNotificationHandlerProvider, HashedWheelTimer
             timer,
                   GameLoop gameLoop) {
-        this.handlerProvider = handlerProvider;
+        this.routeHandlerProvider = handlerProvider;
+        this.webSocketNotificationHandlerProvider = webSocketNotificationHandlerProvider;
         this.timer = timer;
         this.gameLoop = gameLoop;
     }
@@ -53,15 +59,22 @@ public class Server {
     public void run(String host, int port) {
         parentGroup = new NioEventLoopGroup();
         childGroup = new NioEventLoopGroup();
+
         new ServerBootstrap()
                 .group(parentGroup, childGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     protected void initChannel(SocketChannel ch)
                             throws Exception {
-                        ch.pipeline()
-                                .addLast(new HttpServerCodec())
-                                .addLast(handlerProvider.get());
+                        ch.pipeline().addLast(
+                                new HttpRequestDecoder(),
+                                new HttpObjectAggregator(65536),
+                                new HttpResponseEncoder(),
+                                new WebSocketServerProtocolHandler("/game"),
+                                // TODO player should not be created here
+                                webSocketNotificationHandlerProvider.create(new Player("anonymous"))
+                                );
+
                     }
                 })
                 .option(ChannelOption.TCP_NODELAY, true)

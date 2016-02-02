@@ -23,10 +23,16 @@ package mmo.server;
 import dagger.ObjectGraph;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Main {
+    private static final Logger L = Logger.getAnonymousLogger();
+
     public static void main(String[] args) throws IOException,
             InterruptedException {
+
+        Logger.getGlobal().setLevel(Level.ALL);
 
         // openshift host+port
         String host = System.getenv("OPENSHIFT_DIY_IP");
@@ -39,12 +45,13 @@ public class Main {
             port = Integer.parseInt(portStr);
         }
 
+        // TODO: do not fail silently if port is not available
         ObjectGraph objectGraph = ObjectGraph.create(new ServerModule());
         Server server = objectGraph.get(Server.class);
         server.run(host, port);
-        System.out.println("Server started (press enter to shutdown)");
+        L.info("Server started (press enter to shutdown)");
         System.in.read();
-        System.out.println("Server shutting down...");
+        L.info("Server shutting down...");
         server.shutdown();
     }
 }

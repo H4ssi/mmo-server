@@ -27,6 +27,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.handler.codec.http.DefaultHttpContent;
 import io.netty.handler.codec.http.HttpContent;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.ReferenceCountUtil;
 import mmo.server.message.Message;
 import mmo.server.model.Player;
@@ -56,7 +57,7 @@ public class MessageHub {
 
     public void sendMessage(Set<Player> players, Message message) {
         try {
-            HttpContent content = packMassage(message);
+            TextWebSocketFrame content = packMassage(message);
             try {
                 for (Player player : players) {
                     Channel channel = channels.get(player);
@@ -77,8 +78,9 @@ public class MessageHub {
         channels.putIfAbsent(player, channel);
     }
 
-    private DefaultHttpContent packMassage(Message msg) throws JsonProcessingException {
-        return new DefaultHttpContent(
+    // TODO Message Hub should just relay messages, it should not be concerned with underlying protocol
+    private TextWebSocketFrame packMassage(Message msg) throws JsonProcessingException {
+        return new TextWebSocketFrame(
                 Unpooled.wrappedBuffer(
                         writer.writeValueAsBytes(msg)));
     }
