@@ -23,14 +23,8 @@ package mmo.server;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
 import io.netty.util.ReferenceCountUtil;
-import mmo.server.model.Player;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -40,7 +34,6 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
     private ChannelInboundHandler handler = null;
 
     private final DefaultHandlerFactory defaultHandlerFactory;
-    private final NotificationHandlerFactory notificationHandlerFactory;
     private final StatusHandlerFactory statusHandlerFactory;
     private final RoomHandlerFactory roomHandlerFactory;
 
@@ -48,11 +41,9 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
 
     @Inject
     public RouteHandler(DefaultHandlerFactory defaultHandlerFactory,
-                        NotificationHandlerFactory notificationHandlerFactory,
                         StatusHandlerFactory statusHandlerFactory,
                         RoomHandlerFactory roomHandlerFactory) {
         this.defaultHandlerFactory = defaultHandlerFactory;
-        this.notificationHandlerFactory = notificationHandlerFactory;
         this.statusHandlerFactory = statusHandlerFactory;
         this.roomHandlerFactory = roomHandlerFactory;
     }
@@ -76,15 +67,6 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
                     break;
                 case "status":
                     installHandler(ctx, statusHandlerFactory.create());
-                    break;
-                case "game":
-                    installHandler(
-                            ctx,
-                            notificationHandlerFactory.create(
-                                    new Player(
-                                            path.length >= 3
-                                                    ? path[2]
-                                                    : "anonymous")));
                     break;
                 case "room":
                     int roomId;

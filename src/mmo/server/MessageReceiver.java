@@ -27,6 +27,8 @@ import com.google.auto.factory.Provided;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
@@ -41,9 +43,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @AutoFactory
-public class MessageReceiver {
-    private final ObjectReader reader;
-
+public class MessageReceiver extends SimpleChannelInboundHandler<Message> {
     private final HashedWheelTimer timer;
 
     private final HtmlCleaner htmlCleaner;
@@ -54,13 +54,11 @@ public class MessageReceiver {
 
     private final Player player;
 
-    public MessageReceiver(@Provided ObjectMapper mapper,
-                           @Provided HashedWheelTimer timer,
+    public MessageReceiver(@Provided HashedWheelTimer timer,
                            @Provided HtmlCleaner htmlCleaner,
                            @Provided GameLoop gameLoop,
                            @Provided MessageHub messageHub,
                            Player player) {
-        reader = mapper.reader(Message.class);
 
         this.timer = timer;
 
@@ -73,16 +71,15 @@ public class MessageReceiver {
         this.player = player;
     }
 
-    public void init(Channel channel) {
-        messageHub.register(player, channel);
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        messageHub.register(player, ctx.channel());
         gameLoop.login(player);
         welcomeMessages(player);
     }
 
-    public void receive(ByteBuf data) throws IOException {
-        Message m = reader.readValue(
-                new ByteBufInputStream(data));
-
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, Message m) throws Exception {
         if (m instanceof Moving) {
             Direction dir = ((Moving) m).getDirection();
 
@@ -107,9 +104,12 @@ public class MessageReceiver {
         }
     }
 
-    public void exit() {
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         gameLoop.logout(player);
         messageHub.unregister(player);
+
+        super.channelInactive(ctx);
     }
 
     private void welcomeMessages(final Player player) {

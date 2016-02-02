@@ -41,18 +41,20 @@ public class Server {
     private static final Logger L = Logger.getAnonymousLogger();
 
     private final Provider<RouteHandler> routeHandlerProvider;
-    private final WebSocketNotificationHandlerFactory webSocketNotificationHandlerProvider;
+    private final Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider;
+    private final MessageReceiverFactory messageReceiverFactory;
     private final HashedWheelTimer timer;
     private final GameLoop gameLoop;
     private NioEventLoopGroup parentGroup;
     private NioEventLoopGroup childGroup;
 
     @Inject
-    public Server(Provider<RouteHandler> handlerProvider, WebSocketNotificationHandlerFactory webSocketNotificationHandlerProvider, HashedWheelTimer
+    public Server(Provider<RouteHandler> handlerProvider, Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider, MessageReceiverFactory messageReceiverFactory, HashedWheelTimer
             timer,
                   GameLoop gameLoop) {
         this.routeHandlerProvider = handlerProvider;
-        this.webSocketNotificationHandlerProvider = webSocketNotificationHandlerProvider;
+        this.webSocketMessageHandlerProvider = webSocketMessageHandlerProvider;
+        this.messageReceiverFactory = messageReceiverFactory;
         this.timer = timer;
         this.gameLoop = gameLoop;
     }
@@ -73,7 +75,8 @@ public class Server {
                                 new HttpResponseEncoder(),
                                 new WebSocketServerProtocolHandler("/game"),
                                 // TODO player should not be created here
-                                webSocketNotificationHandlerProvider.create(new Player("anonymous"))
+                                webSocketMessageHandlerProvider.get(),
+                                messageReceiverFactory.create(new Player("anonymous"))
                         );
 
                     }
