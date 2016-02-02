@@ -45,7 +45,6 @@ public class Main {
             port = Integer.parseInt(portStr);
         }
 
-        // TODO: do not fail silently if port is not available
         ObjectGraph objectGraph = ObjectGraph.create(new ServerModule());
         Server server = objectGraph.get(Server.class);
         server.run(host, port);

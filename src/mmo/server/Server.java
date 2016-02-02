@@ -21,9 +21,7 @@
 package mmo.server;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.FixedRecvByteBufAllocator;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -37,8 +35,11 @@ import mmo.server.model.Player;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import java.util.logging.Logger;
 
 public class Server {
+    private static final Logger L = Logger.getAnonymousLogger();
+
     private final Provider<RouteHandler> routeHandlerProvider;
     private final WebSocketNotificationHandlerFactory webSocketNotificationHandlerProvider;
     private final HashedWheelTimer timer;
@@ -73,7 +74,7 @@ public class Server {
                                 new WebSocketServerProtocolHandler("/game"),
                                 // TODO player should not be created here
                                 webSocketNotificationHandlerProvider.create(new Player("anonymous"))
-                                );
+                        );
 
                     }
                 })
@@ -81,7 +82,24 @@ public class Server {
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.RCVBUF_ALLOCATOR,
                         new FixedRecvByteBufAllocator(16384))
-                .bind(host, port);
+                .bind(host, port)
+                .addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture future) throws Exception {
+                        if (!future.isSuccess()) {
+                            L.severe("Error setting up server channel: " + future.cause());
+                            new Thread(() -> { // TODO shutdown program gracefuller
+                                try {
+                                    shutdown();
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                } finally {
+                                    System.exit(1);
+                                }
+                            }).start();
+                        }
+                    }
+                });
     }
 
     public void shutdown() throws InterruptedException {
