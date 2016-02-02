@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'com.github.johnrengelman.shadow' version '1.2.1'
+    id "net.ltgt.apt" version "0.5"
 }
 apply plugin: 'eclipse'
 apply plugin: 'idea'
@@ -11,7 +12,7 @@ mainClassName = 'mmo.server.Main'
 
 defaultTasks 'eclipse', 'idea'
 
-sourceCompatibility = 7
+sourceCompatibility = 8
 
 sourceSets {
     main {
@@ -42,11 +43,12 @@ repositories {
 }
 
 dependencies {
-    compile "io.netty:netty-all:4.0.28.Final"
+    compile "io.netty:netty-all:4.0.34.Final"
     compile "com.google.guava:guava:18.0"
     compile "com.squareup.dagger:dagger:1.2.2"
-    compile "com.squareup.dagger:dagger-compiler:1.2.2"
-    compile "com.google.auto.factory:auto-factory:1.0-beta2"
+    apt "com.squareup.dagger:dagger-compiler:1.2.2"
+    compileOnly "com.google.auto.factory:auto-factory:1.0-beta2"
+    apt "com.google.auto.factory:auto-factory:1.0-beta2"
     compile "com.fasterxml.jackson.core:jackson-databind:2.5.3"
     compile "org.jsoup:jsoup:1.8.2"
 
