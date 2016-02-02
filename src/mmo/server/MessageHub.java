@@ -20,15 +20,7 @@
 
 package mmo.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.handler.codec.http.DefaultHttpContent;
-import io.netty.handler.codec.http.HttpContent;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.util.ReferenceCountUtil;
 import mmo.server.message.Message;
 import mmo.server.model.Player;
 
@@ -44,11 +36,8 @@ public class MessageHub {
     private final ConcurrentMap<Player, Channel> channels =
             new ConcurrentHashMap<>();
 
-    private final ObjectWriter writer;
-
     @Inject
-    public MessageHub(ObjectMapper mapper) {
-        writer = mapper.writerFor(Message.class);
+    public MessageHub() {
     }
 
     public void sendMessage(Player player, Message message) {
@@ -56,21 +45,11 @@ public class MessageHub {
     }
 
     public void sendMessage(Set<Player> players, Message message) {
-        try {
-            TextWebSocketFrame content = packMassage(message);
-            try {
-                for (Player player : players) {
-                    Channel channel = channels.get(player);
-                    if (channel != null) {
-                        content.retain();
-                        channel.writeAndFlush(content);
-                    }
-                }
-            } finally {
-                ReferenceCountUtil.release(content);
+        for (Player player : players) {
+            Channel channel = channels.get(player);
+            if (channel != null) {
+                channel.writeAndFlush(message);
             }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace(); // TODO unhandled
         }
     }
 
@@ -78,12 +57,6 @@ public class MessageHub {
         channels.putIfAbsent(player, channel);
     }
 
-    // TODO Message Hub should just relay messages, it should not be concerned with underlying protocol
-    private TextWebSocketFrame packMassage(Message msg) throws JsonProcessingException {
-        return new TextWebSocketFrame(
-                Unpooled.wrappedBuffer(
-                        writer.writeValueAsBytes(msg)));
-    }
 
     public void unregister(Player player) {
         channels.remove(player);
