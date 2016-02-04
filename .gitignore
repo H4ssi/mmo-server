@@ -7,6 +7,7 @@
 /.project
 /.settings/
 /bin/
+/.apt_generated/
 
 # idea
 /*.iml
@@ -15,3 +16,6 @@
 /.idea/
 /out/
 /generated/
+
+# auto factory?
+/.factorypath

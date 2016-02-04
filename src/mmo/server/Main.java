@@ -20,37 +20,35 @@
 
 package mmo.server;
 
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import dagger.ObjectGraph;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 public class Main {
-    private static final Logger L = Logger.getAnonymousLogger();
+	private static final Logger L = LoggerFactory.getLogger(Main.class);
 
-    public static void main(String[] args) throws IOException,
-            InterruptedException {
+	public static void main(String[] args) throws IOException, InterruptedException {
 
-        Logger.getGlobal().setLevel(Level.ALL);
+		// openshift host+port
+		String host = System.getenv("OPENSHIFT_DIY_IP");
+		if (host == null) {
+			host = "0.0.0.0";
+		}
+		String portStr = System.getenv("OPENSHIFT_DIY_PORT");
+		int port = 8080;
+		if (portStr != null) {
+			port = Integer.parseInt(portStr);
+		}
 
-        // openshift host+port
-        String host = System.getenv("OPENSHIFT_DIY_IP");
-        if (host == null) {
-            host = "0.0.0.0";
-        }
-        String portStr = System.getenv("OPENSHIFT_DIY_PORT");
-        int port = 8080;
-        if (portStr != null) {
-            port = Integer.parseInt(portStr);
-        }
-
-        ObjectGraph objectGraph = ObjectGraph.create(new ServerModule());
-        Server server = objectGraph.get(Server.class);
-        server.run(host, port);
-        L.info("Server started (press enter to shutdown)");
-        System.in.read();
-        L.info("Server shutting down...");
-        server.shutdown();
-    }
+		ObjectGraph objectGraph = ObjectGraph.create(new ServerModule());
+		Server server = objectGraph.get(Server.class);
+		server.run(host, port);
+		L.info("Server started (press enter to shutdown)");
+		System.in.read();
+		L.info("Server shutting down...");
+		server.shutdown();
+	}
 }

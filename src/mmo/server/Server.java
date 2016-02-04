@@ -20,8 +20,18 @@
 
 package mmo.server;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -33,85 +43,71 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import mmo.server.model.Player;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-import java.util.logging.Logger;
-
 public class Server {
-    private static final Logger L = Logger.getAnonymousLogger();
+	private static final Logger L = LoggerFactory.getLogger(Server.class);
 
-    private final Provider<RouteHandler> routeHandlerProvider;
-    private final Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider;
-    private final MessageReceiverFactory messageReceiverFactory;
-    private final HashedWheelTimer timer;
-    private final GameLoop gameLoop;
-    private NioEventLoopGroup parentGroup;
-    private NioEventLoopGroup childGroup;
+	private final Provider<RouteHandler> routeHandlerProvider;
+	private final Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider;
+	private final MessageReceiverFactory messageReceiverFactory;
+	private final HashedWheelTimer timer;
+	private final GameLoop gameLoop;
+	private NioEventLoopGroup parentGroup;
+	private NioEventLoopGroup childGroup;
 
-    @Inject
-    public Server(Provider<RouteHandler> handlerProvider, Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider, MessageReceiverFactory messageReceiverFactory, HashedWheelTimer
-            timer,
-                  GameLoop gameLoop) {
-        this.routeHandlerProvider = handlerProvider;
-        this.webSocketMessageHandlerProvider = webSocketMessageHandlerProvider;
-        this.messageReceiverFactory = messageReceiverFactory;
-        this.timer = timer;
-        this.gameLoop = gameLoop;
-    }
+	@Inject
+	public Server(Provider<RouteHandler> handlerProvider,
+			Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider,
+			MessageReceiverFactory messageReceiverFactory, HashedWheelTimer timer, GameLoop gameLoop) {
+		this.routeHandlerProvider = handlerProvider;
+		this.webSocketMessageHandlerProvider = webSocketMessageHandlerProvider;
+		this.messageReceiverFactory = messageReceiverFactory;
+		this.timer = timer;
+		this.gameLoop = gameLoop;
+	}
 
-    public void run(String host, int port) {
-        parentGroup = new NioEventLoopGroup();
-        childGroup = new NioEventLoopGroup();
+	public void run(String host, int port) {
+		parentGroup = new NioEventLoopGroup();
+		childGroup = new NioEventLoopGroup();
 
-        new ServerBootstrap()
-                .group(parentGroup, childGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    protected void initChannel(SocketChannel ch)
-                            throws Exception {
-                        ch.pipeline().addLast(
-                                new HttpRequestDecoder(),
-                                new HttpObjectAggregator(65536),
-                                new HttpResponseEncoder(),
-                                new WebSocketServerProtocolHandler("/game"),
-                                // TODO player should not be created here
-                                webSocketMessageHandlerProvider.get(),
-                                messageReceiverFactory.create(new Player("anonymous"))
-                        );
+		new ServerBootstrap().group(parentGroup, childGroup).channel(NioServerSocketChannel.class)
+				.childHandler(new ChannelInitializer<SocketChannel>() {
+					protected void initChannel(SocketChannel ch) throws Exception {
+						ch.pipeline().addLast(new HttpRequestDecoder(), new HttpObjectAggregator(65536),
+								new HttpResponseEncoder(), new WebSocketServerProtocolHandler("/game"),
+								// TODO player should not be created here
+								webSocketMessageHandlerProvider.get(),
+								messageReceiverFactory.create(new Player("anonymous")));
 
-                    }
-                })
-                .option(ChannelOption.TCP_NODELAY, true)
-                .childOption(ChannelOption.TCP_NODELAY, true)
-                .childOption(ChannelOption.RCVBUF_ALLOCATOR,
-                        new FixedRecvByteBufAllocator(16384))
-                .bind(host, port)
-                .addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture future) throws Exception {
-                        if (!future.isSuccess()) {
-                            L.severe("Error setting up server channel: " + future.cause());
-                            new Thread(() -> { // TODO shutdown program gracefuller
-                                try {
-                                    shutdown();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                } finally {
-                                    System.exit(1);
-                                }
-                            }).start();
-                        }
-                    }
-                });
-    }
+					}
+				}).option(ChannelOption.TCP_NODELAY, true).childOption(ChannelOption.TCP_NODELAY, true)
+				.childOption(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(16384)).bind(host, port)
+				.addListener(new ChannelFutureListener() {
+					@Override
+					public void operationComplete(ChannelFuture future) throws Exception {
+						if (!future.isSuccess()) {
+							L.error("Error setting up server channel: {}", future.cause(), null);
+							new Thread(() -> { // TODO shutdown program
+												// gracefuller
+								try {
+									shutdown();
+								} catch (InterruptedException e) {
+									e.printStackTrace();
+								} finally {
+									System.exit(1);
+								}
+							}).start();
+						}
+					}
+				});
+	}
 
-    public void shutdown() throws InterruptedException {
-        timer.stop();
-        Future<?> parentShutdown = parentGroup.shutdownGracefully();
-        Future<?> childShutdown = childGroup.shutdownGracefully();
-        Future<?> gameLoopShutdown = gameLoop.shutdownGracefully();
-        parentShutdown.await();
-        childShutdown.await();
-        gameLoopShutdown.await();
-    }
+	public void shutdown() throws InterruptedException {
+		timer.stop();
+		Future<?> parentShutdown = parentGroup.shutdownGracefully();
+		Future<?> childShutdown = childGroup.shutdownGracefully();
+		Future<?> gameLoopShutdown = gameLoop.shutdownGracefully();
+		parentShutdown.await();
+		childShutdown.await();
+		gameLoopShutdown.await();
+	}
 }
