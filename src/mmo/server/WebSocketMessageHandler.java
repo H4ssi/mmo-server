@@ -1,5 +1,7 @@
 package mmo.server;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
@@ -13,9 +15,8 @@ import com.google.auto.factory.Provided;
 
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.ReferenceCountUtil;
 import mmo.server.message.Message;
@@ -24,7 +25,7 @@ import mmo.server.message.Message;
  * Created by flori on 02.02.2016.
  */
 @AutoFactory
-public class WebSocketMessageHandler extends ChannelDuplexHandler {
+public class WebSocketMessageHandler extends MessageToMessageCodec<TextWebSocketFrame, Message> {
 	private final ObjectReader reader;
 	private final ObjectWriter writer;
 
@@ -37,26 +38,17 @@ public class WebSocketMessageHandler extends ChannelDuplexHandler {
 	}
 
 	@Override
-	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		if (msg instanceof TextWebSocketFrame) {
-			Message m = reader.readValue(new ByteBufInputStream(((TextWebSocketFrame) msg).content()));
-			L.trace("read: {}", m);
-			ReferenceCountUtil.release(msg);
-			ctx.fireChannelRead(m);
-		} else {
-			// TODO what to do in case of unexpected msg?
-			L.warn("unexpected msg received: {}", msg);
-		}
+	protected void encode(ChannelHandlerContext ctx, Message msg, List<Object> out) throws Exception {
+		L.trace("writing: {}", msg);
+		out.add(new TextWebSocketFrame(Unpooled.wrappedBuffer(writer.writeValueAsBytes(msg))));
 	}
 
 	@Override
-	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-		// TODO why do I get messages that I do not want to receive???
-		if (msg instanceof Message) {
-			L.trace("writing: {}", msg);
-			ctx.write(new TextWebSocketFrame(Unpooled.wrappedBuffer(writer.writeValueAsBytes(msg))), promise);
-		} else {
-			ctx.write(msg, promise);
-		}
+	protected void decode(ChannelHandlerContext ctx, TextWebSocketFrame msg, List<Object> out) throws Exception {
+		Message m = reader.readValue(new ByteBufInputStream(((TextWebSocketFrame) msg).content()));
+		ReferenceCountUtil.release(msg);
+
+		L.trace("read: {}", m);
+		out.add(m);
 	}
 }
