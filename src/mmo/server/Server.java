@@ -20,12 +20,6 @@
 
 package mmo.server;
 
-import javax.inject.Inject;
-import javax.inject.Provider;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -36,12 +30,16 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import mmo.server.model.Player;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class Server {
 	private static final Logger L = LoggerFactory.getLogger(Server.class);
@@ -72,11 +70,13 @@ public class Server {
 		new ServerBootstrap().group(parentGroup, childGroup).channel(NioServerSocketChannel.class)
 				.childHandler(new ChannelInitializer<SocketChannel>() {
 					protected void initChannel(SocketChannel ch) throws Exception {
-						ch.pipeline().addLast(new HttpRequestDecoder(), new HttpObjectAggregator(65536),
-								new HttpResponseEncoder(), new WebSocketServerProtocolHandler("/game"),
-								// TODO player should not be created here
-								webSocketMessageHandlerProvider.get(),
-								messageReceiverFactory.create(new Player("anonymous")));
+                        ch.pipeline().addLast(new HttpServerCodec(), //
+                                new HttpObjectAggregator(65536), //
+                                new WebSocketServerProtocolHandler("/game"), //
+                                // TODO player should not be created here
+                                webSocketMessageHandlerProvider.get(), //
+                                messageReceiverFactory.create(new Player("anonymous")), //
+                                routeHandlerProvider.get());
 
 					}
 				}).option(ChannelOption.TCP_NODELAY, true).childOption(ChannelOption.TCP_NODELAY, true)
