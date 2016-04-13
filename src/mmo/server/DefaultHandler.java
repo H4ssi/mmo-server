@@ -26,24 +26,37 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
 import io.netty.util.ReferenceCountUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 @AutoFactory
 public class DefaultHandler extends ChannelInboundHandlerAdapter {
+    private static final Logger L = LoggerFactory.getLogger(DefaultHandler.class);
+
     private final byte[] data;
 
     public DefaultHandler() {
-        byte data[];
-        try {
-            data = ByteStreams.toByteArray(
-                    DefaultHandler.class.getResourceAsStream(
-                            "README.md"));
+        byte data[] = null;
+        try (InputStream readmeStream = DefaultHandler.class.getResourceAsStream("README.md")) {
+            if (readmeStream != null) {
+                data = ByteStreams.toByteArray(readmeStream);
+            }
         } catch (IOException e) {
-            data = "README.md not found :-(".getBytes(CharsetUtil.UTF_8);
+            L.error("README.md could not be read", e);
+        }
+        if (data == null) {
+            data = "README.md not available :-(".getBytes(CharsetUtil.UTF_8);
         }
         this.data = data;
     }
