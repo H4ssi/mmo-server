@@ -32,7 +32,7 @@ import mmo.server.message.Message;
 
 import javax.inject.Singleton;
 
-@Module(injects = Server.class)
+@Module
 public class ServerModule {
 
     @Provides

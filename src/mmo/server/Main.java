@@ -20,12 +20,10 @@
 
 package mmo.server;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dagger.ObjectGraph;
+import java.io.IOException;
 
 public class Main {
 	private static final Logger L = LoggerFactory.getLogger(Main.class);
@@ -43,8 +41,7 @@ public class Main {
 			port = Integer.parseInt(portStr);
 		}
 
-		ObjectGraph objectGraph = ObjectGraph.create(new ServerModule());
-		Server server = objectGraph.get(Server.class);
+		Server server = DaggerServerComponent.create().getServer();
 		server.run(host, port);
 		L.info("Server started (press enter to shutdown)");
 		System.in.read();
