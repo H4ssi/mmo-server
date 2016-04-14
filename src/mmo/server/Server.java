@@ -31,10 +31,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
-import mmo.server.model.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,20 +43,14 @@ public class Server {
 	private static final Logger L = LoggerFactory.getLogger(Server.class);
 
 	private final Provider<RouteHandler> routeHandlerProvider;
-	private final Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider;
-	private final MessageReceiverFactory messageReceiverFactory;
 	private final HashedWheelTimer timer;
 	private final GameLoop gameLoop;
 	private NioEventLoopGroup parentGroup;
 	private NioEventLoopGroup childGroup;
 
 	@Inject
-	public Server(Provider<RouteHandler> handlerProvider,
-			Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider,
-			MessageReceiverFactory messageReceiverFactory, HashedWheelTimer timer, GameLoop gameLoop) {
+    public Server(Provider<RouteHandler> handlerProvider, HashedWheelTimer timer, GameLoop gameLoop) {
 		this.routeHandlerProvider = handlerProvider;
-		this.webSocketMessageHandlerProvider = webSocketMessageHandlerProvider;
-		this.messageReceiverFactory = messageReceiverFactory;
 		this.timer = timer;
 		this.gameLoop = gameLoop;
 	}
@@ -72,10 +64,6 @@ public class Server {
 					protected void initChannel(SocketChannel ch) throws Exception {
                         ch.pipeline().addLast(new HttpServerCodec(), //
                                 new HttpObjectAggregator(65536), //
-                                new WebSocketServerProtocolHandler("/game"), //
-                                // TODO player should not be created here
-                                webSocketMessageHandlerProvider.get(), //
-                                messageReceiverFactory.create(new Player("anonymous")), //
                                 routeHandlerProvider.get());
 
 					}

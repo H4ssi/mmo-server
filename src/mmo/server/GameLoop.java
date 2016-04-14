@@ -53,6 +53,8 @@ import mmo.server.model.Mob;
 import mmo.server.model.Player;
 import mmo.server.model.PlayerInRoom;
 import mmo.server.model.SpawnPoint;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -66,6 +68,8 @@ import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class GameLoop {
+    private static final Logger L = LoggerFactory.getLogger(GameLoop.class);
+
     public static final int ACTION_DELAY_MILLIS = 66;
     private final DefaultEventExecutorGroup loop =
             new DefaultEventExecutorGroup(1);
@@ -165,20 +169,18 @@ public class GameLoop {
     }
 
     public void login(final Player entering) {
-        loop.submit(new Runnable() {
-            @Override
-            public void run() {
-                final Room room = roomIds.inverse().get(0);
+        loop.submit(() -> {
+            L.debug("login {}", entering);
+            final Room room = roomIds.inverse().get(0);
 
-                Coord coord = room.findFreeNear(new Coord(8, 8));
+            Coord coord = room.findFreeNear(new Coord(8, 8));
 
-                if (coord == null) {
-                    messageHub.sendMessage(entering, new CannotEnter());
-                } else {
-                    PlayerState s = new PlayerState();
-                    players.put(entering, s);
-                    enterRoom(s, entering, room, coord);
-                }
+            if (coord == null) {
+                messageHub.sendMessage(entering, new CannotEnter());
+            } else {
+                PlayerState s = new PlayerState();
+                players.put(entering, s);
+                enterRoom(s, entering, room, coord);
             }
         });
     }

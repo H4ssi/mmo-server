@@ -20,15 +20,11 @@
 
 package mmo.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.auto.factory.AutoFactory;
 import com.google.auto.factory.Provided;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
@@ -39,7 +35,6 @@ import mmo.server.message.Moving;
 import mmo.server.model.Direction;
 import mmo.server.model.Player;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @AutoFactory
@@ -72,10 +67,13 @@ public class MessageReceiver extends SimpleChannelInboundHandler<Message> {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        messageHub.register(player, ctx.channel());
-        gameLoop.login(player);
-        welcomeMessages(player);
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt == WebSocketServerProtocolHandler.ServerHandshakeStateEvent.HANDSHAKE_COMPLETE) {
+            messageHub.register(player, ctx.channel());
+            gameLoop.login(player);
+            welcomeMessages(player);
+        }
+        super.userEventTriggered(ctx, evt);
     }
 
     @Override

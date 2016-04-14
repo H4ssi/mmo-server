@@ -20,32 +20,50 @@
 
 package mmo.server;
 
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.util.ReferenceCountUtil;
+import mmo.server.model.Player;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import java.net.URI;
 import java.util.regex.Pattern;
 
+@ChannelHandler.Sharable
 public class RouteHandler extends ChannelInboundHandlerAdapter {
-    private ChannelInboundHandler handler = null;
+    private static final Logger L = LoggerFactory.getLogger(RouteHandler.class);
 
     private final DefaultHandlerFactory defaultHandlerFactory;
     private final StatusHandlerFactory statusHandlerFactory;
     private final RoomHandlerFactory roomHandlerFactory;
+    private final Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider;
+    private final MessageReceiverFactory messageReceiverFactory;
 
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
 
     @Inject
     public RouteHandler(DefaultHandlerFactory defaultHandlerFactory,
                         StatusHandlerFactory statusHandlerFactory,
-                        RoomHandlerFactory roomHandlerFactory) {
+                        RoomHandlerFactory roomHandlerFactory,
+                        Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider,
+                        MessageReceiverFactory messageReceiverFactory) {
         this.defaultHandlerFactory = defaultHandlerFactory;
         this.statusHandlerFactory = statusHandlerFactory;
         this.roomHandlerFactory = roomHandlerFactory;
+        this.webSocketMessageHandlerProvider = webSocketMessageHandlerProvider;
+        this.messageReceiverFactory = messageReceiverFactory;
     }
 
     @Override
@@ -63,10 +81,10 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
 
             switch (first) {
                 case "":
-                    installHandler(ctx, defaultHandlerFactory.create());
+                    installHandlers(ctx, defaultHandlerFactory.create());
                     break;
                 case "status":
-                    installHandler(ctx, statusHandlerFactory.create());
+                    installHandlers(ctx, statusHandlerFactory.create());
                     break;
                 case "room":
                     int roomId;
@@ -79,14 +97,17 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
                             roomId = 0;
                         }
                     }
-                    installHandler(ctx, roomHandlerFactory.create(roomId));
+                    installHandlers(ctx, roomHandlerFactory.create(roomId));
                     break;
+                case "game":
+                    installWebSocketHandler(ctx, path.length > 2 ? path[2] : null, request.getUri(), msg);
+                    return; // request was upgraded, do not handle it any further
                 default:
-                    installHandler(ctx, null);
+                    installHandlers(ctx);
             }
         }
 
-        if (handler != null) {
+        if (hasNextHandler(ctx)) {
             super.channelRead(ctx, msg);
         } else {
             ctx.writeAndFlush(create404());
@@ -94,15 +115,42 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void installHandler(ChannelHandlerContext ctx,
-                                ChannelInboundHandler newHandler) {
-        if (handler != null) {
-            ctx.pipeline().removeLast();
-            handler = null;
+    private void installWebSocketHandler(ChannelHandlerContext ctx, String playerName, String uri, Object msg) {
+        L.debug("upgrading request {} to websocket", uri);
+
+        if (playerName == null || playerName.isEmpty()) {
+            playerName = "anonymous";
         }
-        if (newHandler != null) {
-            ctx.pipeline().addLast(newHandler);
-            handler = newHandler;
+
+        // remove other handlers
+        installHandlers(ctx);
+
+        // add websocket handlers
+        ctx.pipeline().addLast(new WebSocketServerProtocolHandler(uri),
+                webSocketMessageHandlerProvider.get(),
+                messageReceiverFactory.create(new Player(playerName)));
+
+        // initiate handshake
+        ctx.fireChannelRead(msg);
+
+        // put _this_ handler at very end now
+        ctx.pipeline().remove(this);
+        ctx.pipeline().addLast(this);
+    }
+
+    private boolean hasNextHandler(ChannelHandlerContext ctx) {
+        return this != ctx.pipeline().last();
+    }
+
+
+    private void installHandlers(ChannelHandlerContext ctx,
+                                 ChannelInboundHandler... newHandlers) {
+        while (hasNextHandler(ctx)) {
+            ctx.pipeline().removeLast();
+        }
+
+        for (ChannelInboundHandler h : newHandlers) {
+            ctx.pipeline().addLast(h);
         }
     }
 
@@ -113,5 +161,11 @@ public class RouteHandler extends ChannelInboundHandlerAdapter {
         HttpHeaders.setContentLength(response, 0);
 
         return response;
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        L.error("route handler exception", cause);
+        super.exceptionCaught(ctx, cause);
     }
 }
