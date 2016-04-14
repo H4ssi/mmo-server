@@ -23,15 +23,9 @@ package mmo.server;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.util.ReferenceCountUtil;
 import mmo.server.model.Player;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,130 +36,107 @@ import java.net.URI;
 import java.util.regex.Pattern;
 
 @ChannelHandler.Sharable
-public class RouteHandler extends ChannelInboundHandlerAdapter {
+public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Logger L = LoggerFactory.getLogger(RouteHandler.class);
 
-    private final DefaultHandlerFactory defaultHandlerFactory;
-    private final StatusHandlerFactory statusHandlerFactory;
+    private final DefaultHandler defaultHandler;
+    private final StatusHandler statusHandler;
+    private final PageNotFoundHandler pageNotFoundHandler;
     private final RoomHandlerFactory roomHandlerFactory;
     private final Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider;
     private final MessageReceiverFactory messageReceiverFactory;
 
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
+    private static final String PAGE_HANDLER_NAME = "current-page-handler";
+
+    private static long uniqueNameId = 0;
 
     @Inject
-    public RouteHandler(DefaultHandlerFactory defaultHandlerFactory,
-                        StatusHandlerFactory statusHandlerFactory,
+    public RouteHandler(DefaultHandler defaultHandler,
+                        StatusHandler statusHandler,
+                        PageNotFoundHandler pageNotFoundHandler,
                         RoomHandlerFactory roomHandlerFactory,
                         Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider,
                         MessageReceiverFactory messageReceiverFactory) {
-        this.defaultHandlerFactory = defaultHandlerFactory;
-        this.statusHandlerFactory = statusHandlerFactory;
+        super(false);
+        this.defaultHandler = defaultHandler;
+        this.statusHandler = statusHandler;
+        this.pageNotFoundHandler = pageNotFoundHandler;
         this.roomHandlerFactory = roomHandlerFactory;
         this.webSocketMessageHandlerProvider = webSocketMessageHandlerProvider;
         this.messageReceiverFactory = messageReceiverFactory;
     }
 
     @Override
-    public void channelRead(final ChannelHandlerContext ctx, Object msg)
-            throws Exception {
-        if (msg instanceof HttpRequest) {
-            HttpRequest request = (HttpRequest) msg;
-
-            String[] path = PATH_SEP.split(request.getUri(), -1);
-            for (int i = 0; i < path.length; ++i) {
-                path[i] = URI.create(path[i]).getPath();
-            }
-
-            String first = path.length == 1 ? "" : path[1];
-
-            switch (first) {
-                case "":
-                    installHandlers(ctx, defaultHandlerFactory.create());
-                    break;
-                case "status":
-                    installHandlers(ctx, statusHandlerFactory.create());
-                    break;
-                case "room":
-                    int roomId;
-                    if (path.length < 3) {
-                        roomId = 0;
-                    } else {
-                        try {
-                            roomId = Integer.parseInt(path[2]);
-                        } catch (NumberFormatException e) {
-                            roomId = 0;
-                        }
-                    }
-                    installHandlers(ctx, roomHandlerFactory.create(roomId));
-                    break;
-                case "game":
-                    installWebSocketHandler(ctx, path.length > 2 ? path[2] : null, request.getUri(), msg);
-                    return; // request was upgraded, do not handle it any further
-                default:
-                    installHandlers(ctx);
-            }
-        }
-
-        if (hasNextHandler(ctx)) {
-            super.channelRead(ctx, msg);
-        } else {
-            ctx.writeAndFlush(create404());
-            ReferenceCountUtil.release(msg);
-        }
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+        ctx.pipeline().addLast(PAGE_HANDLER_NAME, pageNotFoundHandler);
+        super.handlerAdded(ctx);
     }
 
-    private void installWebSocketHandler(ChannelHandlerContext ctx, String playerName, String uri, Object msg) {
+    @Override
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+        String[] path = PATH_SEP.split(request.getUri(), -1);
+        for (int i = 0; i < path.length; ++i) {
+            path[i] = URI.create(path[i]).getPath();
+        }
+
+        String first = path.length == 1 ? "" : path[1];
+
+        switch (first) {
+            case "":
+                installHandler(ctx, defaultHandler);
+                break;
+            case "status":
+                installHandler(ctx, statusHandler);
+                break;
+            case "room":
+                int roomId;
+                if (path.length < 3) {
+                    roomId = 0;
+                } else {
+                    try {
+                        roomId = Integer.parseInt(path[2]);
+                    } catch (NumberFormatException e) {
+                        roomId = 0;
+                    }
+                }
+                installHandler(ctx, roomHandlerFactory.create(roomId));
+                break;
+            case "game":
+                installWebSocketHandler(ctx, path.length > 2 ? path[2] : null, request.getUri());
+                break;
+            default:
+                installHandler(ctx, pageNotFoundHandler);
+        }
+
+        ctx.fireChannelRead(request);
+    }
+
+    private void installWebSocketHandler(ChannelHandlerContext ctx, String playerName, String uri) {
         L.debug("upgrading request {} to websocket", uri);
 
         if (playerName == null || playerName.isEmpty()) {
             playerName = "anonymous";
         }
 
-        // remove other handlers
-        installHandlers(ctx);
-
         // add websocket handlers
-        ctx.pipeline().addLast(new WebSocketServerProtocolHandler(uri),
-                webSocketMessageHandlerProvider.get(),
-                messageReceiverFactory.create(new Player(playerName)));
-
-        // initiate handshake
-        ctx.fireChannelRead(msg);
-
-        // put _this_ handler at very end now
-        ctx.pipeline().remove(this);
-        ctx.pipeline().addLast(this);
+        ctx.pipeline()
+                .addBefore(PAGE_HANDLER_NAME, generateName("ws-srv"), new WebSocketServerProtocolHandler(uri))
+                .addBefore(PAGE_HANDLER_NAME, generateName("ws-msg"), webSocketMessageHandlerProvider.get())
+                .addBefore(PAGE_HANDLER_NAME, generateName("player"), messageReceiverFactory.create(new Player(playerName)));
     }
 
-    private boolean hasNextHandler(ChannelHandlerContext ctx) {
-        return this != ctx.pipeline().last();
-    }
-
-
-    private void installHandlers(ChannelHandlerContext ctx,
-                                 ChannelInboundHandler... newHandlers) {
-        while (hasNextHandler(ctx)) {
-            ctx.pipeline().removeLast();
-        }
-
-        for (ChannelInboundHandler h : newHandlers) {
-            ctx.pipeline().addLast(h);
-        }
-    }
-
-    private FullHttpResponse create404() {
-        FullHttpResponse response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
-        HttpHeaders.setKeepAlive(response, true);
-        HttpHeaders.setContentLength(response, 0);
-
-        return response;
+    private void installHandler(ChannelHandlerContext ctx, ChannelInboundHandler newHandler) {
+        ctx.pipeline().replace(PAGE_HANDLER_NAME, PAGE_HANDLER_NAME, newHandler);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         L.error("route handler exception", cause);
         super.exceptionCaught(ctx, cause);
+    }
+
+    private static String generateName(String base) {
+        return base + "-" + uniqueNameId++;
     }
 }

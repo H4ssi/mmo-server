@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Florian Hassanen
+ * Copyright 2016 Florian Hassanen
  *
  * This file is part of mmo-server.
  *
@@ -20,44 +20,30 @@
 
 package mmo.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
-import mmo.server.data.ServerInfo;
 
 import javax.inject.Inject;
 
 @ChannelHandler.Sharable
-public class StatusHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-    private final ObjectMapper mapper;
-
+public class PageNotFoundHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     @Inject
-    public StatusHandler(ObjectMapper mapper) {
-        this.mapper = mapper;
+    public PageNotFoundHandler() {
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
-        ServerInfo serverInfo = new ServerInfo("up", "Chuck Norris " +
-                "only needs one (1) pokeball to catch " +
-                "legendery pokemon.");
-        ByteBuf buf = Unpooled.wrappedBuffer(
-                mapper.writeValueAsBytes(serverInfo));
-        HttpResponse res = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
-        HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
-                "text/plain; encoding=utf-8");
-        HttpHeaders.setContentLength(res, buf.readableBytes());
+        FullHttpResponse response = new DefaultFullHttpResponse(
+                HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
+        HttpHeaders.setContentLength(response, 0);
 
-        ctx.writeAndFlush(res);
+        ctx.writeAndFlush(response);
     }
 }
