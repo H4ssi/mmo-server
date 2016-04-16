@@ -20,32 +20,5 @@
 
 package mmo.server.data;
 
-import mmo.server.model.Coord;
-
-import java.util.Collection;
-
-public class RoomInfo implements Data {
-    private int id;
-    private Collection<Coord> obstacles;
-
-    public RoomInfo(int id, Collection<Coord> obstacles) {
-        this.id = id;
-        this.obstacles = obstacles;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public Collection<Coord> getObstacles() {
-        return obstacles;
-    }
-
-    public void setObstacles(Collection<Coord> obstacles) {
-        this.obstacles = obstacles;
-    }
+public interface Data {
 }

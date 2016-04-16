@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Florian Hassanen
+ * Copyright 2016 Florian Hassanen
  *
  * This file is part of mmo-server.
  *
@@ -20,57 +20,25 @@
 
 package mmo.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.factory.AutoFactory;
 import com.google.auto.factory.Provided;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpRequest;
-import io.netty.handler.codec.http.HttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
-import io.netty.util.ReferenceCountUtil;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.FullHttpRequest;
 import mmo.server.data.RoomInfo;
 
 @AutoFactory
-public class RoomHandler extends ChannelInboundHandlerAdapter {
-    private final ObjectMapper mapper;
+public class RoomHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private final int roomId;
     private final GameLoop gameLoop;
 
-    public RoomHandler(@Provided ObjectMapper mapper,
-                       @Provided GameLoop gameLoop,
-                       int roomId) {
-        this.mapper = mapper;
+    public RoomHandler(@Provided GameLoop gameLoop, int roomId) {
         this.gameLoop = gameLoop;
         this.roomId = roomId;
     }
 
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg)
-            throws Exception {
-        try {
-            if (msg instanceof HttpRequest) {
-                RoomInfo roomInfo = new RoomInfo(roomId,
-                        gameLoop.getRoom(roomId).getObstacles());
-
-                ByteBuf buf = Unpooled.wrappedBuffer(
-                        mapper.writeValueAsBytes(roomInfo));
-                HttpResponse res = new DefaultFullHttpResponse(
-                        HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
-                HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
-                        "text/plain; encoding=utf-8");
-                HttpHeaders.setKeepAlive(res, true);
-                HttpHeaders.setContentLength(res, buf.readableBytes());
-
-                ctx.writeAndFlush(res);
-            }
-        } finally {
-            ReferenceCountUtil.release(msg);
-        }
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
+        ctx.writeAndFlush(new RoomInfo(roomId, gameLoop.getRoom(roomId).getObstacles()));
     }
 }

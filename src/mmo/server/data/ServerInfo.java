@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Florian Hassanen
+ * Copyright 2016 Florian Hassanen
  *
  * This file is part of mmo-server.
  *
@@ -20,7 +20,7 @@
 
 package mmo.server.data;
 
-public class ServerInfo {
+public class ServerInfo implements Data {
     public ServerInfo(String status, String messageOfTheDay) {
         this.status = status;
         this.messageOfTheDay = messageOfTheDay;

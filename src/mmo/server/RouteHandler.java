@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Florian Hassanen
+ * Copyright 2016 Florian Hassanen
  *
  * This file is part of mmo-server.
  *
@@ -21,6 +21,7 @@
 package mmo.server;
 
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -41,6 +42,7 @@ public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private final DefaultHandler defaultHandler;
     private final StatusHandler statusHandler;
+    private final DataToHttpEncoder dataToHttpEncoder;
     private final PageNotFoundHandler pageNotFoundHandler;
     private final RoomHandlerFactory roomHandlerFactory;
     private final Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider;
@@ -54,6 +56,7 @@ public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     @Inject
     public RouteHandler(DefaultHandler defaultHandler,
                         StatusHandler statusHandler,
+                        DataToHttpEncoder dataToHttpEncoder,
                         PageNotFoundHandler pageNotFoundHandler,
                         RoomHandlerFactory roomHandlerFactory,
                         Provider<WebSocketMessageHandler> webSocketMessageHandlerProvider,
@@ -61,6 +64,7 @@ public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         super(false);
         this.defaultHandler = defaultHandler;
         this.statusHandler = statusHandler;
+        this.dataToHttpEncoder = dataToHttpEncoder;
         this.pageNotFoundHandler = pageNotFoundHandler;
         this.roomHandlerFactory = roomHandlerFactory;
         this.webSocketMessageHandlerProvider = webSocketMessageHandlerProvider;
@@ -69,7 +73,14 @@ public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+        ctx.pipeline().addLast(dataToHttpEncoder);
         ctx.pipeline().addLast(PAGE_HANDLER_NAME, pageNotFoundHandler);
+        ctx.pipeline().addLast(new ChannelHandlerAdapter() {
+            @Override
+            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                L.error("exception", cause);
+            }
+        });
         super.handlerAdded(ctx);
     }
 
@@ -128,12 +139,6 @@ public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     private void installHandler(ChannelHandlerContext ctx, ChannelInboundHandler newHandler) {
         ctx.pipeline().replace(PAGE_HANDLER_NAME, PAGE_HANDLER_NAME, newHandler);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        L.error("route handler exception", cause);
-        super.exceptionCaught(ctx, cause);
     }
 
     private static String generateName(String base) {
