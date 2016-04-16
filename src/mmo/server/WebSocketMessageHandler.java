@@ -1,25 +1,21 @@
 package mmo.server;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.auto.factory.AutoFactory;
 import com.google.auto.factory.Provided;
-
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageCodec;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.util.ReferenceCountUtil;
 import mmo.server.message.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import java.util.List;
 
 /**
  * Created by flori on 02.02.2016.
@@ -45,8 +41,7 @@ public class WebSocketMessageHandler extends MessageToMessageCodec<TextWebSocket
 
 	@Override
 	protected void decode(ChannelHandlerContext ctx, TextWebSocketFrame msg, List<Object> out) throws Exception {
-		Message m = reader.readValue(new ByteBufInputStream(((TextWebSocketFrame) msg).content()));
-		ReferenceCountUtil.release(msg);
+		Message m = reader.readValue(new ByteBufInputStream(msg.content()));
 
 		L.trace("read: {}", m);
 		out.add(m);
