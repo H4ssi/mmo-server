@@ -51,8 +51,6 @@ public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Pattern PATH_SEP = Pattern.compile(Pattern.quote("/"));
     private static final String PAGE_HANDLER_NAME = "current-page-handler";
 
-    private static long uniqueNameId = 0;
-
     @Inject
     public RouteHandler(DefaultHandler defaultHandler,
                         StatusHandler statusHandler,
@@ -114,8 +112,8 @@ public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
                 installHandler(ctx, roomHandlerFactory.create(roomId));
                 break;
             case "game":
-                installWebSocketHandler(ctx, path.length > 2 ? path[2] : null, request.getUri());
-                break;
+                installWebSocketHandler(ctx, path.length > 2 ? path[2] : null, request);
+                return;
             default:
                 installHandler(ctx, pageNotFoundHandler);
         }
@@ -123,25 +121,32 @@ public class RouteHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
         ctx.fireChannelRead(request);
     }
 
-    private void installWebSocketHandler(ChannelHandlerContext ctx, String playerName, String uri) {
-        L.debug("upgrading request {} to websocket", uri);
+    private void installWebSocketHandler(ChannelHandlerContext ctx, String playerName, FullHttpRequest request) {
+        L.debug("upgrading request {} to websocket", request.getUri());
 
         if (playerName == null || playerName.isEmpty()) {
             playerName = "anonymous";
         }
 
+        // we replace all handlers, web socket will not be downgraded
+        while (ctx.pipeline().last() != this) {
+            ctx.pipeline().removeLast();
+        }
+
         // add websocket handlers
-        ctx.pipeline()
-                .addBefore(PAGE_HANDLER_NAME, generateName("ws-srv"), new WebSocketServerProtocolHandler(uri))
-                .addBefore(PAGE_HANDLER_NAME, generateName("ws-msg"), webSocketMessageHandlerProvider.get())
-                .addBefore(PAGE_HANDLER_NAME, generateName("player"), messageReceiverFactory.create(new Player(playerName)));
+        ctx.pipeline().addLast(
+                new WebSocketServerProtocolHandler(request.getUri()),
+                webSocketMessageHandlerProvider.get(),
+                messageReceiverFactory.create(new Player(playerName)));
+
+        // do handshake
+        ctx.fireChannelRead(request);
+
+        // route handler is not needed either
+        ctx.pipeline().remove(this);
     }
 
     private void installHandler(ChannelHandlerContext ctx, ChannelInboundHandler newHandler) {
         ctx.pipeline().replace(PAGE_HANDLER_NAME, PAGE_HANDLER_NAME, newHandler);
-    }
-
-    private static String generateName(String base) {
-        return base + "-" + uniqueNameId++;
     }
 }
