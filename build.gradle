@@ -37,7 +37,7 @@ sourceCompatibility = 8
 sourceSets {
     main {
         java {
-            srcDirs "src"
+            srcDirs "src", "src-doclet"
         }
         resources {
             srcDirs "${buildDir}/markdown", "resources"
@@ -52,6 +52,10 @@ sourceSets {
 
 task genJavadoc(type: Javadoc) {
     source = sourceSets.main.allJava
+    destinationDir = reporting.file("protocol-docs")
+    title = null
+    options.doclet = "mmo.server.doclet.JsonExport"
+    options.docletpath = [sourceSets.main.output.classesDir]
 }
 
 task copyMarkDown(type: Copy) {
@@ -76,6 +80,9 @@ dependencies {
     apt "com.google.auto.factory:auto-factory:1.0-beta3"
     compile "com.fasterxml.jackson.core:jackson-databind:2.5.3"
     compile "org.jsoup:jsoup:1.8.2"
+
+    // for doclets
+    compile files("${System.getProperty('java.home')}/../lib/tools.jar")
 
     testCompile "org.testng:testng:6.9.4"
     testCompile "org.hamcrest:java-hamcrest:2.0.0.0"
