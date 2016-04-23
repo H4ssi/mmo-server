@@ -1,6 +1,6 @@
 # gradle
 /.gradle/
-/build/
+build/
 
 # eclipse
 /.classpath
@@ -10,7 +10,7 @@
 /.apt_generated/
 
 # idea
-/*.iml
+*.iml
 /*.ipr
 /*.iws
 /.idea/

@@ -23,83 +23,107 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '1.2.3'
     id "net.ltgt.apt" version "0.6"
 }
-apply plugin: 'eclipse'
-apply plugin: 'idea'
-apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
-
-mainClassName = 'mmo.server.Main'
 
 defaultTasks 'eclipse', 'idea'
 
-sourceCompatibility = 8
+allprojects {
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+}
 
-sourceSets {
-    main {
-        java {
-            srcDirs "src", "src-doclet"
+subprojects {
+    apply plugin: 'java'
+
+    sourceCompatibility = 8
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+project(":server") {
+    apply plugin: 'net.ltgt.apt'
+    apply plugin: 'application'
+    apply plugin: 'com.github.johnrengelman.shadow'
+
+    mainClassName = 'mmo.server.Main'
+
+    sourceSets {
+        main {
+            java {
+                srcDirs "src"
+            }
+            resources {
+                srcDirs "${buildDir}/markdown", "resources"
+            }
         }
-        resources {
-            srcDirs "${buildDir}/markdown", "resources"
+        test {
+            java {
+                srcDirs "test"
+            }
         }
     }
+
+    task protodoc(type: Javadoc, dependsOn: ":doclet:build") {
+        source = sourceSets.main.allJava
+        destinationDir = reporting.file("protocol-docs")
+        title = null
+        options.doclet = "mmo.server.doclet.JsonExport"
+        options.docletpath = [project(":doclet").sourceSets.main.output.classesDir, sourceSets.main.output.classesDir]
+    }
+
+    task copyMarkDown(type: Copy) {
+        from '.'
+        into "${buildDir}/markdown/mmo/server"
+        include "*.md"
+    }
+
+    tasks.processResources.dependsOn(copyMarkDown)
+
+    dependencies {
+        compile "ch.qos.logback:logback-classic:1.1.3"
+        compile "io.netty:netty-all:4.0.36.Final"
+        compile "com.google.guava:guava:18.0"
+        compile "com.google.dagger:dagger:2.2"
+        apt "com.google.dagger:dagger-compiler:2.2"
+        compileOnly "com.google.auto.factory:auto-factory:1.0-beta3"
+        apt "com.google.auto.factory:auto-factory:1.0-beta3"
+        compile "com.fasterxml.jackson.core:jackson-databind:2.5.3"
+        compile "org.jsoup:jsoup:1.8.2"
+
+        testCompile "org.testng:testng:6.9.4"
+        testCompile "org.hamcrest:java-hamcrest:2.0.0.0"
+    }
+
     test {
-        java {
-            srcDirs "test"
+        useTestNG()
+        testLogging {
+            exceptionFormat "full"
         }
     }
-}
 
-task genJavadoc(type: Javadoc) {
-    source = sourceSets.main.allJava
-    destinationDir = reporting.file("protocol-docs")
-    title = null
-    options.doclet = "mmo.server.doclet.JsonExport"
-    options.docletpath = [sourceSets.main.output.classesDir]
-}
-
-task copyMarkDown(type: Copy) {
-    from '.'
-    into "${buildDir}/markdown/mmo/server"
-    include "*.md"
-}
-
-tasks.processResources.dependsOn(copyMarkDown)
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    compile "ch.qos.logback:logback-classic:1.1.3"
-    compile "io.netty:netty-all:4.0.36.Final"
-    compile "com.google.guava:guava:18.0"
-    compile "com.google.dagger:dagger:2.2"
-    apt "com.google.dagger:dagger-compiler:2.2"
-    compileOnly "com.google.auto.factory:auto-factory:1.0-beta3"
-    apt "com.google.auto.factory:auto-factory:1.0-beta3"
-    compile "com.fasterxml.jackson.core:jackson-databind:2.5.3"
-    compile "org.jsoup:jsoup:1.8.2"
-
-    // for doclets
-    compile files("${System.getProperty('java.home')}/../lib/tools.jar")
-
-    testCompile "org.testng:testng:6.9.4"
-    testCompile "org.hamcrest:java-hamcrest:2.0.0.0"
-}
-
-test {
-    useTestNG()
-    testLogging {
-        exceptionFormat "full"
+    run {
+        standardInput = System.in
     }
 }
 
-run {
-    standardInput = System.in
+project(":doclet") {
+    buildDir = "build/doclet"
+
+    sourceSets {
+        main {
+            java {
+                srcDirs "src"
+            }
+        }
+    }
+
+    dependencies {
+        compile project(":server")
+        compile files("${System.getProperty('java.home')}/../lib/tools.jar")
+    }
 }
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.12'
 }
-
