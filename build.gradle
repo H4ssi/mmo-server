@@ -41,6 +41,8 @@ subprojects {
     }
 }
 
+def jackson = "com.fasterxml.jackson.core:jackson-databind:2.5.3"
+
 project(":server") {
     apply plugin: 'net.ltgt.apt'
     apply plugin: 'application'
@@ -66,10 +68,13 @@ project(":server") {
 
     task protodoc(type: Javadoc, dependsOn: ":doclet:build") {
         source = sourceSets.main.allJava
+        classpath = sourceSets.main.compileClasspath
         destinationDir = reporting.file("protocol-docs")
         title = null
         options.doclet = "mmo.server.doclet.JsonExport"
-        options.docletpath = [project(":doclet").sourceSets.main.output.classesDir, sourceSets.main.output.classesDir]
+        project(":doclet").afterEvaluate { doclet ->
+            options.docletpath = doclet.sourceSets.main.runtimeClasspath as List
+        }
     }
 
     task copyMarkDown(type: Copy) {
@@ -88,7 +93,7 @@ project(":server") {
         apt "com.google.dagger:dagger-compiler:2.2"
         compileOnly "com.google.auto.factory:auto-factory:1.0-beta3"
         apt "com.google.auto.factory:auto-factory:1.0-beta3"
-        compile "com.fasterxml.jackson.core:jackson-databind:2.5.3"
+        compile jackson
         compile "org.jsoup:jsoup:1.8.2"
 
         testCompile "org.testng:testng:6.9.4"
@@ -108,8 +113,6 @@ project(":server") {
 }
 
 project(":doclet") {
-    buildDir = "build/doclet"
-
     sourceSets {
         main {
             java {
@@ -121,6 +124,7 @@ project(":doclet") {
     dependencies {
         compile project(":server")
         compile files("${System.getProperty('java.home')}/../lib/tools.jar")
+        compile jackson
     }
 }
 

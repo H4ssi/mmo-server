@@ -3,11 +3,11 @@
 build/
 
 # eclipse
-/.classpath
-/.project
-/.settings/
-/bin/
-/.apt_generated/
+.classpath
+.project
+.settings/
+bin/
+.apt_generated/
 
 # idea
 *.iml
@@ -18,4 +18,4 @@ build/
 /generated/
 
 # auto factory?
-/.factorypath
+.factorypath

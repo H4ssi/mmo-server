@@ -20,13 +20,15 @@
 
 package mmo.server.doclet;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.RootDoc;
 import com.sun.javadoc.Type;
-import mmo.server.message.Message;
 
-import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by flori on 22.04.2016.
@@ -41,24 +43,19 @@ public class JsonExport {
             }
         }
 
-        String file = (outDir == null ? "" : (outDir + "/")) + "protocol.json";
+        File file = new File((outDir == null ? "" : outDir + "/") + "protocol.json");
 
-        try (FileWriter fw = new FileWriter(file)) {
-            fw.write("[");
-            boolean first = true; // TODO use proper json library
-            for (ClassDoc c : doc.classes()) {
-                if (isProtocolClass(c)) {
-                    if (!first) {
-                        fw.write(",");
-                    } else {
-                        first = false;
-                    }
-                    fw.write('"');
-                    fw.write(c.qualifiedTypeName());
-                    fw.write('"');
-                }
+        List<Message> messages = new LinkedList<>();
+        for (ClassDoc c : doc.classes()) {
+            if (isProtocolClass(c)) {
+                messages.add(new Message(c.simpleTypeName()));
             }
-            fw.write("]");
+        }
+
+        ObjectMapper m = new ObjectMapper();
+        try {
+            m.writeValue(file, messages);
+
             return true;
         } catch (IOException e) {
             doc.printError(e.getMessage());
@@ -75,7 +72,7 @@ public class JsonExport {
 
     private static boolean isProtocolClass(ClassDoc c) {
         for (Type t : c.interfaceTypes()) {
-            if (Message.class.getName().equals(t.qualifiedTypeName())) {
+            if (mmo.server.message.Message.class.getName().equals(t.qualifiedTypeName())) {
                 return true;
             }
         }
