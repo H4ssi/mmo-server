@@ -20,13 +20,18 @@
 
 package mmo.server.doclet;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.javadoc.ClassDoc;
+import com.sun.javadoc.Doc;
+import com.sun.javadoc.FieldDoc;
 import com.sun.javadoc.RootDoc;
+import com.sun.javadoc.Tag;
 import com.sun.javadoc.Type;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -48,19 +53,44 @@ public class JsonExport {
         List<Message> messages = new LinkedList<>();
         for (ClassDoc c : doc.classes()) {
             if (isProtocolClass(c)) {
-                messages.add(new Message(c.simpleTypeName()));
+                List<Property> properties = new ArrayList<>();
+                messages.add(new Message(c.simpleTypeName(), c.commentText(), getServer(c), getClient(c), properties));
+
+                for (FieldDoc f : c.fields(false)) {
+                    properties.add(new Property(f.name(), f.commentText(), getServer(f), getClient(f)));
+                }
             }
         }
 
         ObjectMapper m = new ObjectMapper();
+        m.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
         try {
-            m.writeValue(file, messages);
+            m.writerWithDefaultPrettyPrinter().writeValue(file, messages);
 
             return true;
         } catch (IOException e) {
             doc.printError(e.getMessage());
             return false;
         }
+    }
+
+    private static String getServer(Doc doc) {
+        for (Tag t : doc.tags()) {
+            if ("@server".equals(t.name()) || "@both".equals(t.name())) {
+                return t.text();
+            }
+        }
+        return null;
+    }
+
+    private static String getClient(Doc doc) {
+        for (Tag t : doc.tags()) {
+            if ("@client".equals(t.name()) || "@both".equals(t.name())) {
+                return t.text();
+            }
+        }
+        return null;
     }
 
     public static int optionLength(String option) {

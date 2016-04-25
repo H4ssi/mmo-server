@@ -20,21 +20,17 @@
 
 package mmo.server.doclet;
 
-import java.util.List;
-
-public class Message {
+public class Property {
     private String name;
     private String description;
-    private String server;
-    private String client;
-    private List<Property> properties;
+    private String serverExample;
+    private String clientExample;
 
-    public Message(String name, String description, String server, String client, List<Property> properties) {
+    public Property(String name, String description, String serverExample, String clientExample) {
         this.name = name;
         this.description = description;
-        this.server = server;
-        this.client = client;
-        this.properties = properties;
+        this.serverExample = serverExample;
+        this.clientExample = clientExample;
     }
 
     public String getName() {
@@ -53,27 +49,19 @@ public class Message {
         this.description = description;
     }
 
-    public String getServer() {
-        return server;
+    public String getServerExample() {
+        return serverExample;
     }
 
-    public void setServer(String server) {
-        this.server = server;
+    public void setServerExample(String serverExample) {
+        this.serverExample = serverExample;
     }
 
-    public String getClient() {
-        return client;
+    public String getClientExample() {
+        return clientExample;
     }
 
-    public void setClient(String client) {
-        this.client = client;
-    }
-
-    public List<Property> getProperties() {
-        return properties;
-    }
-
-    public void setProperties(List<Property> properties) {
-        this.properties = properties;
+    public void setClientExample(String clientExample) {
+        this.clientExample = clientExample;
     }
 }
