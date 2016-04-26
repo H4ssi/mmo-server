@@ -20,7 +20,26 @@
 
 package mmo.server.message;
 
+/**
+ * Denotes actual movement of a player.
+ * <p>
+ * Note that the movement is considered to be completed now. The positions of
+ * the players are indeed updated.
+ * <p>
+ * If the player moved onto a tile occupied by another player, their positions
+ * are exchanged.
+ * <p>
+ * Note that, if a player walks off of a room, a <code>Left</code> message will be sent
+ * instead.
+ *
+ * @server sent when a player completed his/her previously started move
+ */
 public class Moved implements Message {
+    /**
+     * local room id of moved player
+     *
+     * @server 5
+     */
     private int id;
 
     public Moved() {

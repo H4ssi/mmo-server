@@ -21,6 +21,11 @@
 package mmo.server.model;
 
 public class Player {
+    /**
+     * player name
+     *
+     * @server "florian"
+     */
     private String name;
 
     public Player() {

@@ -23,6 +23,12 @@ package mmo.server.message;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import mmo.server.model.PlayerInRoom;
 
+/**
+ * Denotes information about a player entering a room.
+ *
+ * @server when a player enters a room, the server sends this out to all current players in the room, even the player
+ * just entering, in fact this is the  very first message sent to the client upon entering a room.
+ */
 public class Entered implements Message {
     @JsonUnwrapped
     private PlayerInRoom playerInRoom;

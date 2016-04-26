@@ -24,9 +24,31 @@ import mmo.server.model.PlayerInRoom;
 
 import java.util.Collection;
 
+/**
+ * denotes information about players present in room
+ *
+ * @server this message is sent to a player upon entering a room, it is the second message received after
+ * <code>Entered</code>
+ */
 public class InRoom implements Message {
+    /**
+     * id of current room
+     *
+     * @server 1337
+     */
     private int room;
+
+    /**
+     * list of players currently in this room
+     *
+     * @server
+     */
     private Collection<PlayerInRoom> players;
+
+    /** list of mobs currently in this room
+     *
+     * @server
+     */
     private Collection<PlayerInRoom> mobs;
 
     public InRoom() {

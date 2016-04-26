@@ -22,6 +22,14 @@ package mmo.server.message;
 
 import mmo.server.model.PlayerInRoom;
 
+/**
+ * Denotes a mob spawning.
+ * <p>
+ * Mobs are considered to be enemies, and can be attacked and defeated by the
+ * players.
+ *
+ * @server sent when a mob enters a room.
+ */
 public class Spawned extends Entered {
     public Spawned(PlayerInRoom playerInRoom) {
         super(playerInRoom);

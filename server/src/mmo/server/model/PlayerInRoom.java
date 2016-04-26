@@ -23,6 +23,11 @@ package mmo.server.model;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 public class PlayerInRoom {
+    /**
+     * room local id of player
+     *
+     * @server 1
+     */
     private int id;
 
     @JsonUnwrapped

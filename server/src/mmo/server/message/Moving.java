@@ -22,8 +22,29 @@ package mmo.server.message;
 
 import mmo.server.model.Direction;
 
+/**
+ * Denotes a player starting to move.
+ * <p>
+ * Note that the player does still need to finish the move. This is just an
+ * indication that the movement was started. The current position of the player is
+ * not changed yet.
+ *
+ * @server sent to all players that can observe another player (or themselves) starting to move
+ * @client send this message to express an intent to move
+ */
 public class Moving implements Message {
+    /**
+     * direction of movement
+     *
+     * @both "LEFT"
+     */
     private Direction direction;
+
+    /**
+     * local room id of moving player
+     *
+     * @server 5
+     */
     private Integer id;
 
     public Moving() {

@@ -21,7 +21,18 @@
 package mmo.server.model;
 
 public class Coord {
+    /**
+     * x coordinate
+     *
+     * @server 7
+     */
     private int x;
+
+    /**
+     * y coordinate
+     *
+     * @server 8
+     */
     private int y;
 
     public Coord(int x, int y) {

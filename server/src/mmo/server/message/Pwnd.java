@@ -20,7 +20,19 @@
 
 package mmo.server.message;
 
+/**
+ * Denotes the defeat of a player/mob.
+ * <p>
+ * A defeated player/mob should be considered to not to participate any more in the current room.
+ *
+ * @server sent when a player/mob was defeated.
+ */
 public class Pwnd implements Message {
+    /**
+     * local room id of defeated player/mob
+     *
+     * @server 5
+     */
     private int id;
 
     public Pwnd(int id) {

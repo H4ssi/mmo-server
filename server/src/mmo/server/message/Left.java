@@ -20,7 +20,19 @@
 
 package mmo.server.message;
 
+/**
+ * Denotes a player leaving the current room.
+ * <p>
+ * This message is still received by the player currently leaving.
+ *
+ * @server sent upon a player leaving the room to all players in the room to be left.
+ */
 public class Left implements Message {
+    /**
+     * local room id of leaving player
+     *
+     * @server 5
+     */
     private int id;
 
     public Left() {

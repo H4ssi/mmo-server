@@ -20,9 +20,30 @@
 
 package mmo.server.message;
 
+/**
+ * Denotes a chat message.
+ * <p>
+ * Chat messages are supposed to be HTML encoded (Thus clients should handle
+ * rendering and special characters like `<`, `>` etc. correctly). Client
+ * input is sanitized by the server prior to dispatching.
+ *
+ * @server the server relays some message for the client to receive
+ * @client a client sends a chat message to the room (when the message is sent from the client to the server)
+ */
 public class Chat implements Message {
+
+    /**
+     * author local room id, maybe unset if message was not send by any client (e.g. server messages)
+     *
+     * @server 12
+     */
     private Integer id;
 
+    /**
+     * chat message
+     *
+     * @both "Hello there!"
+     */
     private String message;
 
     public Chat() {

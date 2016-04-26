@@ -20,7 +20,20 @@
 
 package mmo.server.message;
 
+/**
+ * Denotes failed movement of a player.
+ * <p>
+ * Note that the movement is considered to be completed, but the position of the
+ * player is still unchanged.
+ *
+ * @server sent when a player failed to successfully execute his/her previously started move (e.g. due to an obstacle)
+ */
 public class Bump implements Message {
+    /**
+     * local room id of moved player
+     *
+     * @server 5
+     */
     private int id;
 
     public Bump() {

@@ -20,7 +20,19 @@
 
 package mmo.server.message;
 
+/**
+ * Denotes a failed attack.
+ * <p>
+ * Note that the attack is considered to be completed, but failed to deal any damage to the target.
+ *
+ * @server sent when a player/mob failed to successfully execute his/her/its previously started attack.
+ */
 public class Miss implements Message {
+    /**
+     * local room id of attacking player/mob
+     *
+     * @server 5
+     */
     private int id;
 
     public Miss(int id) {

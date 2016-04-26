@@ -20,8 +20,25 @@
 
 package mmo.server.message;
 
+/**
+ * Denotes a successfully executed attack.
+ * <p>
+ * Note that the attack is considered to be completed now.
+ *
+ * @server sent when a player/mob attacked successfully.
+ */
 public class Hit implements Message {
+    /**
+     * attacking player/mob
+     *
+     * @server 5
+     */
     private int id;
+
+    /**
+     * damage dealt
+     * @server 42
+     */
     private int damage;
 
     public Hit(int id, int damage) {

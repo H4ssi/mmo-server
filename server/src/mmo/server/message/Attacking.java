@@ -22,8 +22,30 @@ package mmo.server.message;
 
 import mmo.server.model.Direction;
 
+/**
+ * Denotes a player or mob starting an attack.
+ * <p>
+ * Attacks always target (a unit occupying) an adjacent field.
+ * <p>
+ * Note that the player does still need to finish the attack. This is just an
+ * indication that the attack was started. No damage is dealt so far.
+ *
+ * @server sent when a player or mob starts to attack
+ * @client end this message to express an intent to attack
+ */
 public class Attacking implements Message {
+    /**
+     * direction of attack
+     *
+     * @both "LEFT"
+     */
     private Direction direction;
+
+    /**
+     * local room id of attacking player/mob
+     *
+     * @server 5
+     */
     private Integer id;
 
     public Attacking(Integer id, Direction direction) {
