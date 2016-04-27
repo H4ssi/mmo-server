@@ -21,7 +21,9 @@
 package mmo.server.doclet;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.javadoc.AnnotationDesc;
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.Doc;
 import com.sun.javadoc.FieldDoc;
@@ -35,9 +37,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * Created by flori on 22.04.2016.
- */
 public class JsonExport {
     public static boolean start(RootDoc doc) {
         String outDir = null;
@@ -56,9 +55,7 @@ public class JsonExport {
                 List<Property> properties = new ArrayList<>();
                 messages.add(new Message(c.simpleTypeName(), c.commentText(), getServer(c), getClient(c), properties));
 
-                for (FieldDoc f : c.fields(false)) {
-                    properties.add(new Property(f.name(), f.commentText(), getServer(f), getClient(f)));
-                }
+                collectProperties(c, properties);
             }
         }
 
@@ -73,6 +70,25 @@ public class JsonExport {
             doc.printError(e.getMessage());
             return false;
         }
+    }
+
+    private static void collectProperties(ClassDoc c, List<Property> properties) {
+        for (FieldDoc f : c.fields(false)) {
+            if (isJsonUnwrapped(f)) {
+                collectProperties(f.type().asClassDoc(), properties);
+            } else {
+                properties.add(new Property(f.name(), f.commentText(), getServer(f), getClient(f)));
+            }
+        }
+    }
+
+    private static boolean isJsonUnwrapped(FieldDoc f) {
+        for (AnnotationDesc a : f.annotations()) {
+            if (JsonUnwrapped.class.getName().equals(a.annotationType().qualifiedTypeName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String getServer(Doc doc) {
