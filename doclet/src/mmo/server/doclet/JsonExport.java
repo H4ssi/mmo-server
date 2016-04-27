@@ -29,7 +29,6 @@ import com.sun.javadoc.Doc;
 import com.sun.javadoc.FieldDoc;
 import com.sun.javadoc.RootDoc;
 import com.sun.javadoc.Tag;
-import com.sun.javadoc.Type;
 
 import java.io.File;
 import java.io.IOException;
@@ -80,6 +79,9 @@ public class JsonExport {
                 properties.add(new Property(f.name(), f.commentText(), getServer(f), getClient(f)));
             }
         }
+        if (c.superclass() != null) {
+            collectProperties(c.superclass(), properties);
+        }
     }
 
     private static boolean isJsonUnwrapped(FieldDoc f) {
@@ -117,11 +119,11 @@ public class JsonExport {
     }
 
     private static boolean isProtocolClass(ClassDoc c) {
-        for (Type t : c.interfaceTypes()) {
-            if (mmo.server.message.Message.class.getName().equals(t.qualifiedTypeName())) {
+        for (ClassDoc i : c.interfaces()) {
+            if (mmo.server.message.Message.class.getName().equals(i.qualifiedTypeName())) {
                 return true;
             }
         }
-        return false;
+        return c.superclass() != null && isProtocolClass(c.superclass());
     }
 }
