@@ -32,43 +32,45 @@ import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.AttributeKey;
 import io.netty.util.CharsetUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 
 @ChannelHandler.Sharable
 public class DefaultHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
     private static final Logger L = LoggerFactory.getLogger(DefaultHandler.class);
 
-    private final byte[] data;
+    public static AttributeKey<String> FILE = AttributeKey.valueOf("mmo-file");
 
     @Inject
     public DefaultHandler() {
-        byte data[] = null;
-        try (InputStream readmeStream = DefaultHandler.class.getResourceAsStream("README.md")) {
-            if (readmeStream != null) {
-                data = ByteStreams.toByteArray(readmeStream);
-            }
+    }
+
+    private byte[] load(String filename) {
+        // TODO load from resources in prod
+        try (InputStream is = new FileInputStream(Paths.get("server/resources/web", filename).toFile())) {
+            return ByteStreams.toByteArray(is);
         } catch (IOException e) {
-            L.error("README.md could not be read", e);
+            L.error("{} could not be read", filename, e);
         }
-        if (data == null) {
-            data = "README.md not available :-(".getBytes(CharsetUtil.UTF_8);
-        }
-        this.data = data;
+        return "not found :-(".getBytes(CharsetUtil.UTF_8);
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
-        ByteBuf buf = Unpooled.wrappedBuffer(data);
+        String filename = ctx.channel().attr(FILE).get();
+        ByteBuf buf = Unpooled.wrappedBuffer(load(filename.isEmpty() ? "index.html" : filename));
         HttpResponse res = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1, HttpResponseStatus.OK, buf);
         HttpHeaders.setHeader(res, HttpHeaders.Names.CONTENT_TYPE,
-                "text/plain; encoding=utf-8");
+                "text/html; encoding=utf-8");
         HttpHeaders.setContentLength(res, buf.readableBytes());
 
         ctx.writeAndFlush(res);

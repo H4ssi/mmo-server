@@ -66,16 +66,6 @@ project(":server") {
         }
     }
 
-    task protodoc(type: Javadoc, dependsOn: ":doclet:build") {
-        source = sourceSets.main.allJava
-        classpath = sourceSets.main.compileClasspath
-        destinationDir = reporting.file("protocol-docs")
-        title = null
-        options.doclet = "mmo.server.doclet.JsonExport"
-        project(":doclet").afterEvaluate { doclet ->
-            options.docletpath = doclet.sourceSets.main.runtimeClasspath as List
-        }
-    }
 
     task copyMarkDown(type: Copy) {
         from '.'
@@ -100,6 +90,16 @@ project(":server") {
         testCompile "org.hamcrest:java-hamcrest:2.0.0.0"
     }
 
+    task protodoc(type: Javadoc, dependsOn: ":doclet:build") {
+        source = sourceSets.main.allJava
+        classpath = sourceSets.main.compileClasspath + sourceSets.main.output.dirs
+        destinationDir = reporting.file("protocol-docs")
+        title = null
+        options.doclet = "mmo.server.doclet.JsonExport"
+        project(":doclet").afterEvaluate { doclet ->
+            options.docletpath = doclet.sourceSets.main.runtimeClasspath as List
+        }
+    }
     test {
         useTestNG()
         testLogging {
