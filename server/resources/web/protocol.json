@@ -1,0 +1,167 @@
+[ {
+  "name" : "Attacking",
+  "description" : "Denotes a player or mob starting an attack.\n <p>\n Attacks always target (a unit occupying) an adjacent field.\n <p>\n Note that the player does still need to finish the attack. This is just an\n indication that the attack was started. No damage is dealt so far.",
+  "server" : "sent when a player or mob starts to attack",
+  "client" : "end this message to express an intent to attack",
+  "properties" : [ {
+    "name" : "direction",
+    "description" : "direction of attack",
+    "serverExample" : "\"LEFT\"",
+    "clientExample" : "\"LEFT\""
+  }, {
+    "name" : "id",
+    "description" : "local room id of attacking player/mob",
+    "serverExample" : "5"
+  } ]
+}, {
+  "name" : "Bump",
+  "description" : "Denotes failed movement of a player.\n <p>\n Note that the movement is considered to be completed, but the position of the\n player is still unchanged.",
+  "server" : "sent when a player failed to successfully execute his/her previously started move (e.g. due to an obstacle)",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "local room id of moved player",
+    "serverExample" : "5"
+  } ]
+}, {
+  "name" : "CannotEnter",
+  "description" : "",
+  "properties" : [ ]
+}, {
+  "name" : "Chat",
+  "description" : "Denotes a chat message.\n <p>\n Chat messages are supposed to be HTML encoded (Thus clients should handle\n rendering and special characters like `<`, `>` etc. correctly). Client\n input is sanitized by the server prior to dispatching.",
+  "server" : "the server relays some message for the client to receive",
+  "client" : "a client sends a chat message to the room (when the message is sent from the client to the server)",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "author local room id, maybe unset if message was not send by any client (e.g. server messages)",
+    "serverExample" : "12"
+  }, {
+    "name" : "message",
+    "description" : "chat message",
+    "serverExample" : "\"Hello there!\"",
+    "clientExample" : "\"Hello there!\""
+  } ]
+}, {
+  "name" : "Entered",
+  "description" : "Denotes information about a player entering a room.",
+  "server" : "when a player enters a room, the server sends this out to all current players in the room, even the player\n just entering, in fact this is the  very first message sent to the client upon entering a room.",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "room local id of player",
+    "serverExample" : "1"
+  }, {
+    "name" : "name",
+    "description" : "player name",
+    "serverExample" : "\"florian\""
+  }, {
+    "name" : "x",
+    "description" : "x coordinate",
+    "serverExample" : "7"
+  }, {
+    "name" : "y",
+    "description" : "y coordinate",
+    "serverExample" : "8"
+  } ]
+}, {
+  "name" : "Hit",
+  "description" : "Denotes a successfully executed attack.\n <p>\n Note that the attack is considered to be completed now.",
+  "server" : "sent when a player/mob attacked successfully.",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "attacking player/mob",
+    "serverExample" : "5"
+  }, {
+    "name" : "damage",
+    "description" : "damage dealt",
+    "serverExample" : "42"
+  } ]
+}, {
+  "name" : "InRoom",
+  "description" : "denotes information about players present in room",
+  "server" : "this message is sent to a player upon entering a room, it is the second message received after\n <code>Entered</code>",
+  "properties" : [ {
+    "name" : "room",
+    "description" : "id of current room",
+    "serverExample" : "1337"
+  }, {
+    "name" : "players",
+    "description" : "list of players currently in this room",
+    "serverExample" : ""
+  }, {
+    "name" : "mobs",
+    "description" : "list of mobs currently in this room",
+    "serverExample" : ""
+  } ]
+}, {
+  "name" : "Left",
+  "description" : "Denotes a player leaving the current room.\n <p>\n This message is still received by the player currently leaving.",
+  "server" : "sent upon a player leaving the room to all players in the room to be left.",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "local room id of leaving player",
+    "serverExample" : "5"
+  } ]
+}, {
+  "name" : "Miss",
+  "description" : "Denotes a failed attack.\n <p>\n Note that the attack is considered to be completed, but failed to deal any damage to the target.",
+  "server" : "sent when a player/mob failed to successfully execute his/her/its previously started attack.",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "local room id of attacking player/mob",
+    "serverExample" : "5"
+  } ]
+}, {
+  "name" : "Moved",
+  "description" : "Denotes actual movement of a player.\n <p>\n Note that the movement is considered to be completed now. The positions of\n the players are indeed updated.\n <p>\n If the player moved onto a tile occupied by another player, their positions\n are exchanged.\n <p>\n Note that, if a player walks off of a room, a <code>Left</code> message will be sent\n instead.",
+  "server" : "sent when a player completed his/her previously started move",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "local room id of moved player",
+    "serverExample" : "5"
+  } ]
+}, {
+  "name" : "Moving",
+  "description" : "Denotes a player starting to move.\n <p>\n Note that the player does still need to finish the move. This is just an\n indication that the movement was started. The current position of the player is\n not changed yet.",
+  "server" : "sent to all players that can observe another player (or themselves) starting to move",
+  "client" : "send this message to express an intent to move",
+  "properties" : [ {
+    "name" : "direction",
+    "description" : "direction of movement",
+    "serverExample" : "\"LEFT\"",
+    "clientExample" : "\"LEFT\""
+  }, {
+    "name" : "id",
+    "description" : "local room id of moving player",
+    "serverExample" : "5"
+  } ]
+}, {
+  "name" : "Pwnd",
+  "description" : "Denotes the defeat of a player/mob.\n <p>\n A defeated player/mob should be considered to not to participate any more in the current room.",
+  "server" : "sent when a player/mob was defeated.",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "local room id of defeated player/mob",
+    "serverExample" : "5"
+  } ]
+}, {
+  "name" : "Spawned",
+  "description" : "Denotes a mob spawning.\n <p>\n Mobs are considered to be enemies, and can be attacked and defeated by the\n players.",
+  "server" : "sent when a mob enters a room.",
+  "properties" : [ {
+    "name" : "id",
+    "description" : "room local id of player",
+    "serverExample" : "1"
+  }, {
+    "name" : "name",
+    "description" : "player name",
+    "serverExample" : "\"florian\""
+  }, {
+    "name" : "x",
+    "description" : "x coordinate",
+    "serverExample" : "7"
+  }, {
+    "name" : "y",
+    "description" : "y coordinate",
+    "serverExample" : "8"
+  } ]
+} ]

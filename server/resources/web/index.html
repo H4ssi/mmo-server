@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Hello React!</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.1/react.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/15.0.1/react-dom.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.js"></script>
+</head>
+<body>
+<div id="mmo"></div>
+<script type="text/babel">
+    var DocBase = React.createClass({
+        getInitialState: function() { return {messages: []}; },
+
+        componentDidMount: function() {
+            this.serverRequest = $.get("protocol.json", function (result) {
+                this.setState({messages: JSON.parse(result)});
+            }.bind(this));
+        },
+
+        componentWillUnmount: function() {
+            this.serverRequest.abort();
+        },
+
+        render: function() {
+            var renderMessage = function(m) {
+                return (
+                <div key={m.name}>
+                    <h2>{m.name}</h2>
+                    {m.description}
+                </div>);
+            }
+            return (
+            <div>
+                <h1>mmo-server</h1>
+                {this.state.messages.map(renderMessage)}
+            </div>);
+        }
+    });
+    ReactDOM.render(<DocBase />, document.getElementById('mmo'));
+</script>
+</body>
+</html>
